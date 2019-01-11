@@ -12,7 +12,7 @@
 
 int main(int argc, char **argv)
 {
-  //gROOT->Reset();
+  //gROOT->Reset(); a
 
   bool simul_key = 0;
   
