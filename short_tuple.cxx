@@ -12,6 +12,9 @@
 
 int main(int argc, char **argv)
 {
+
+  //////////////////////
+  // FILES
   bool simul_key = 0;
   
   TClasTool *input = new TClasTool();
@@ -42,6 +45,12 @@ int main(int argc, char **argv)
     }
     in.close();
   }
+  // FILES
+  //////////////////////
+
+
+  //////////////////////
+  // VARIABLES and NTUPLES
   TDatabasePDG pdg;
   
   const char* NtupleName;
@@ -62,23 +71,24 @@ int main(int argc, char **argv)
     NtupleName = "ntuple_data";
     output = new TFile("local/prune_data_test.root", "RECREATE", "Data of particles");
   } else { 
-    NtupleName = "ntuple_accept";
+    NtupleName = "particles_recons";
     output = new TFile("local/prune_simul.root", "RECREATE", "simul_Fe");
   }
 
-  TNtuple *tElec = new TNtuple("e_rec","Reconstructed Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
-  Float_t DataElec[tElec->GetNvar()];
+  TNtuple *e_recons = new TNtuple("e_rec","Reconstructed Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
+  Float_t DataElec[e_recons->GetNvar()];
 
-  TNtuple *ntuple = new TNtuple(NtupleName,"reconstructed particles",VarList);
-  TNtuple *ntuple_thrown = 0;
+  TNtuple *particles_recons = new TNtuple(NtupleName,"reconstructed particles",VarList);
+  TNtuple *particles_thrown = 0;
   TNtuple *e_thrown=0;
     
   
   if(simul_key == 1) {
-    ntuple_thrown = new TNtuple("ntuple_thrown","thrown particles",VarList);
+    particles_thrown = new TNtuple("particles_thrown","thrown particles",VarList);
     e_thrown = new TNtuple("e_thrown","thrown Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
   }
-  
+  // VARIABLES and NTUPLES
+  //////////////////////  
   
 
   cout.width(4);
@@ -145,10 +155,11 @@ int main(int argc, char **argv)
       
 
       
-      //if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t -> Q2() > 1. && t -> W() > 2. && t -> Nu() / 5.015 < 0.85)
+      
       if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")  
 	{
-	  //Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
+	  // variables reminder
+	  // Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
 	  DataElec[0] = t -> Q2();
 	  DataElec[1] = t -> W();
 	  DataElec[2] = t -> Nu();
@@ -167,10 +178,9 @@ int main(int argc, char **argv)
 	  DataElec[11] = t -> Pz(0);
 	  DataElec[12] = k;
 	  
-	  tElec->Fill(DataElec);
-	  //std::cout<<"event: "<<input->GetCurrentEvent()<<std::endl;
-	  //std::cout<<"got electron data"<<std::endl;
-	  //Int_t NmbPion = 0;
+	  e_recons->Fill(DataElec);
+
+	  // fill with zeroes if needed
 	  if ( nRows == 1 )
 	    {
 	      for ( Int_t l = 1; l < GSIMrows; l++ )
@@ -178,21 +188,16 @@ int main(int argc, char **argv)
 		  for ( Int_t ll = 0; ll < Nvar; ll++)
 		    vars[ll] = 0;
 		  vars[evntpos] = k;
-		  ntuple->Fill(vars);
+		  particles_recons->Fill(vars);
 		}
 	    }
 	  for (Int_t i = 1; i < nRows; i++) 
 	    {
 	      
 	      TString category = t->GetCategorization(i,tt);
-	      //if (category == "high energy pion +" || category == "low energy pion +")
-	      //is_pion=1;
-	      //particle_event = nRows;
-	      //std::cout<<"\tnr: "<<i<<std::endl; 
 	      
-	      //	      if (category == "gamma" || category == "pi-" || category == "high energy pion +" || category == "low energy pion +" || category == "s_electron" || category == "positron") 
-	      //{
-
+	      // if (category == "gamma" || category == "pi-" || category == "high energy pion +" || category == "low energy pion +" || category == "s_electron" || category == "positron") 
+	      
 	      // NTUPLE_ACCEPT FILLING
 	      Int_t f = 0;
 	      vars[f] = t -> ElecVertTarg(); f++;
@@ -211,37 +216,7 @@ int main(int argc, char **argv)
 	      vars[f] = t -> Momentum(i); f++;
 	      vars[f] = t -> TimeCorr4(0.139570,i); f++;
 	      vars[f] = (t -> Z(i)) - (t -> Z(0)); f++;
-	      //vars[f] = TMath::Max(t->Etot(i),t->Ein(i)+t->Eout(i)); f++;
-	      //vars[f] = TMath::Max(t->Etot(0),t->Ein(0)+t->Eout(0)); f++;
-	      //vars[f] = t->Momentum(0); f++;
-	      //vars[f] = t->TimeEC(0); f++;
-	      //vars[f] = t->TimeSC(0); f++;
-	      //vars[f] = t->PathEC(0); f++;
-	      //vars[f] = t->PathSC(0); f++;
-	      vars[f] = k; f++;
-	      //vars[f] = t->Px(i); f++;
-	      //vars[f] = t->Py(i); f++;
-	      //vars[f] = t->Pz(i); f++;
-	      //vars[f] = t->X(0); f++;
-	      //vars[f] = t->Y(0); f++;
-	      //vars[f] = t->Z(0); f++;
-	      vert = t->GetCorrectedVert();
-	      //vars[f] = vert->X();  f++;
-	      //vars[f] = vert->Y();  f++;
-	      //vars[f] = vert->Z();  f++;
-	      //vars[f] = t->TimeEC(i); f++;
-	      //vars[f] = t->XEC(i); f++;
-	      //vars[f] = t->YEC(i); f++;
-	      //vars[f] = t->ZEC(i); f++;
-	      //vars[f] = t->Px(0); f++;
-	      //vars[f] = t->Py(0); f++;
-	      //vars[f] = t->Pz(0); f++;
-	      
-	      //vars[f] = t->Ein(i); f++;
-	      //vars[f] = t->Eout(i); f++;
-	      //vars[f] = t->Ein(0); f++;
-	      //vars[f] = t->Eout(0); f++;
-	      
+	      vars[f] = k; f++;	      
 	      vars[f] = ((category == "gamma")?22:
 			  ((category == "pi-")?-211:
 			   (( category == "high energy pion +" || category == "low energy pion +")?211:
@@ -249,35 +224,29 @@ int main(int argc, char **argv)
 			    )
 			   )
 			 ); f++;
-	      //vars[f] = t->Betta(i); f++;
-	      //vars[f] = t->X(i); f++;
-	      //vars[f] = t->Y(i); f++;
-	      //vars[f] = t->Z(i); f++;
-	      //vars[f] = is_pion; //f++;
-	      //vars[f] = k;
-	      ntuple->Fill(vars);
-	      //is_pion = 0;
+	      particles_recons->Fill(vars);
+
+
 	      if ( i  == nRows-1 && GSIMrows > nRows )
 		{
-		  //cout << i << " " << nRows << endl;
-		  //cout << "row : " << k << " " ;
-		  //cout << "filling : " << GSIMrows  << " - " << nRows;
-		  //cout << " = " << to_fill << endl;
 		  for ( Int_t l = 0; l < to_fill; l++ )
 		    {
 		      for ( Int_t ll = 0; ll < Nvar; ll++)
 			vars[ll] = 0;
 		      vars[evntpos] = k;
-		      ntuple->Fill(vars);
+		      particles_recons->Fill(vars);
 		    }
 		}
-	    }
-	}
-      else 
+
+	      
+	    } // end: for (Int_t i = 1; i < nRows; i++)
+	} // end:  if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")
+      
+      else // if(nRows>0 && (t->GetCategorization(0,tt)) != "electron")
 	{
 	  for ( Int_t l = 0; l < 13; l++ )
 	    DataElec[l] = 0;
-	  tElec->Fill(DataElec);
+	  e_recons->Fill(DataElec);
 
 	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
 	    {
@@ -285,7 +254,7 @@ int main(int argc, char **argv)
 		vars[ll] = 0;
 	      vars[evntpos] = k;
 	      //vars[Nvar] = k;
-	      ntuple->Fill(vars);
+	      particles_recons->Fill(vars);
 	    }
 	}
       
@@ -330,81 +299,32 @@ int main(int argc, char **argv)
 	      
 	      e_thrown->Fill(DataElec);
 	    }
-	  //      std::cout<<"got electron gsim"<<std::endl;
-	  //Int_t NmbPion = 0;
-	  //particle_event = input->GetNRows("GSIM");
-	  //cout << particle_event << endl;
-	  //ntuple_branch = new Float_t[particle_event];
+	  
 	  for( Int_t i=1; i < GSIMrows; i++ )
 	    {
-	      //if(t -> Id(i,1)==1 || t -> Id(i,1)==9 || t -> Id(i,1)==8 ) //gamma: 1/22, pi0,+,-: 7/111,8/211,9 (Geant3/pdg)
-	      {
-		//if ( t-> Id(i,1) == 8 )
-		//  {
-		//    is_pion = 1;
-		//  }
-		Int_t f = 0;
-		vars[f] = t -> ElecVertTarg(1); f++;
-		vars[f] = t -> Q2(1); f++;
-		vars[f] = t -> Nu(1); f++;
-		vars[f] = t -> Xb(1); f++;
-		vars[f] = t -> W(1); f++;
-		vars[f] = t -> Sector(0,1); f++;
-		vars[f] = t -> ThetaPQ(i,1); f++;
-		vars[f] = t -> PhiPQ(i,1); f++;
-		vars[f] = t -> Zh(i,1); f++;
-		vars[f] = TMath::Sqrt(t -> Pt2(i,1)); f++;
-		vars[f] = t -> Mx2(i,1); f++;
-		vars[f] = t -> Xf(i,1); f++;
-		vars[f] = t -> T(i,1); f++;
-		vars[f] = t -> Momentum(i,1); f++;
-		vars[f] = 0; f++;//t -> TimeCorr4(0.139570,i);
-		vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
-		//vars[f] = t->Momentum(i,1); f++;//TMath::Max(t->Etot(i),t->Ein(i)+t->Eout(i));;
-		//vars[f] = TMath::Sqrt(t->Momentum(0,1)*t->Momentum(0,1)+kMe*kMe);  f++;//TMath::Max(t->Etot(0),t->Ein(0)+t->Eout(0));
-		//vars[f] =t->Momentum(0,1); f++;
-		//vars[f] = 0; f++;//t->TimeEC(0);
-		//vars[f] = 0; f++;//t->TimeSC(0);
-		//vars[f] = 0; f++;//t->PathEC(0);
-		//vars[f] = 0; f++;//t->PathSC(0);
-		vars[f] = k; f++;
-		//vars[f] = t->Px(i,1); f++;
-		//vars[f] = t->Py(i,1); f++;
-		//vars[f] = t->Pz(i,1); f++;
-		//vars[f] = t->X(0,1); f++;
-		//vars[f] = t->Y(0,1); f++;
-		//vars[f] = t->Z(0,1); f++;
-		//vert = t->GetCorrectedVert();
-		//vars[f] = t->X(0,1); f++;//vert->X(); 
-		//vars[f] = t->Y(0,1); f++;//vert->Y(); 
-		//vars[f] = t->Z(0,1); f++;//vert->Z(); 
-		//vars[f] = 0; f++;//t->TimeEC(i);
-		//vars[f] = 0; f++;//t->XEC(i);
-		//vars[f] = 0; f++;//t->YEC(i);
-		//vars[f] = 0; f++;//t->ZEC(i);
-		//vars[f] = t->Px(0,1); f++;
-		//vars[f] = t->Py(0,1); f++;
-		//vars[f] = t->Pz(0,1); f++;
-		
-		//vars[f] = 0; f++;
-		//vars[f] = 0; f++;
-		//vars[f] = 0; f++;
-		//vars[f] = 0; f++;
-		vars[f] = t -> Id(i,1); f++;
-		//vars[f] = t->Betta(i,1); f++;
-		//vars[f] = t->X(i,1); f++;
-		//vars[f] = t->Y(i,1); f++;
-		//vars[f] = t->Z(i,1); f++;
-		//vars[f] = is_pion;// f++;
-		//vars[f] = k;
-		ntuple_thrown->Fill(vars);
-		//is_pion = 0;
-		//ntuple_branch = ntuple_thrown->GetArgs();
-		//ntuple_branch[i].Fill(vars);;
-		//tree_thrown->Fill();
-	      }	
+	      Int_t f = 0;
+	      vars[f] = t -> ElecVertTarg(1); f++;
+	      vars[f] = t -> Q2(1); f++;
+	      vars[f] = t -> Nu(1); f++;
+	      vars[f] = t -> Xb(1); f++;
+	      vars[f] = t -> W(1); f++;
+	      vars[f] = t -> Sector(0,1); f++;
+	      vars[f] = t -> ThetaPQ(i,1); f++;
+	      vars[f] = t -> PhiPQ(i,1); f++;
+	      vars[f] = t -> Zh(i,1); f++;
+	      vars[f] = TMath::Sqrt(t -> Pt2(i,1)); f++;
+	      vars[f] = t -> Mx2(i,1); f++;
+	      vars[f] = t -> Xf(i,1); f++;
+	      vars[f] = t -> T(i,1); f++;
+	      vars[f] = t -> Momentum(i,1); f++;
+	      vars[f] = 0; f++;//t -> TimeCorr4(0.139570,i);
+	      vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
+	      vars[f] = k; f++;
+	      vars[f] = t -> Id(i,1); f++;
+	      particles_thrown->Fill(vars);
 	    }
-	  //delete ntuple_branch;
+	  
+	  
 	  if ( nRows > GSIMrows )
 	    {
 	      for ( Int_t i = 0; i < to_fill; i++ )
@@ -412,10 +332,10 @@ int main(int argc, char **argv)
 		  for ( Int_t ll = 0; ll < Nvar; ll++ )
 		    vars[ll] = 0;
 		  vars[evntpos] = k;
-		  ntuple_thrown->Fill(vars);
+		  particles_thrown->Fill(vars);
 		}
 	    }
-	}
+	} // if( simul_key == 1 )
       else
 	{
 	  for ( Int_t i = 0; i < 13; i++ )
@@ -426,31 +346,14 @@ int main(int argc, char **argv)
 	      for ( Int_t ll = 0; ll < Nvar; ll++ )
 		vars[ll] = 0;
 	      vars[evntpos] = k;
-	      ntuple_thrown->Fill(vars);
-	    }
-	  
-	  
-	  // if there is pair creation between thrown and accepted
-	  // if ( nRows > GSIMrows )
-	  //   {
-	  //     //if (k == 1858 )
-	  //     //cout << "im (also?) on line 374!" << endl;
-	  //     for ( Int_t i = 0; i < to_fill; i++ )
-	  // 	{
-	  // 	  for ( Int_t ll = 0; ll < Nvar; ll++ )
-	  // 	    vars[ll] = 0;
-	  // 	  vars[50] = k;
-	  // 	  ntuple_thrown->Fill(vars);
-	  // 	}
-	  //   }
+	      particles_thrown->Fill(vars);
+	    } 
 	}
       
       cout<<std::right<<float(k+1)/nEntries*100<<"%\r";
       cout.flush();
-      //cout<<std::right<<float(k+1)/nEntries*100<<"%\n";
       input->Next();
-    }
-  
+    } // for (Int_t k = 0; k < nEntries; k++) 
   output->Write();
   output->Close();
   cout << "Done." << endl;
