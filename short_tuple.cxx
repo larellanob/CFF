@@ -12,8 +12,6 @@
 
 int main(int argc, char **argv)
 {
-  //gROOT->Reset(); a
-
   bool simul_key = 0;
   
   TClasTool *input = new TClasTool();
@@ -21,7 +19,6 @@ int main(int argc, char **argv)
   
   if(argc == 1) {    
     char File[200];
-    //system("ls -l *.root > dataFiles.txt");
     ifstream in("dataFiles.txt", ios::in);
     if (!in) {
         cerr << "File Not Opened!" << endl;
@@ -31,11 +28,10 @@ int main(int argc, char **argv)
         input->Add(File);
     }
     in.close();
-    //system("rm dataFiles.txt");
+    
   } else {
     simul_key = 1;
     char File[200];
-    //system("ls -1 *.root > simulFiles.txt");
     ifstream in("simulFiles.txt", ios::in);
     if (!in) {
         cerr << "File Not Opened!" << endl;
@@ -45,19 +41,16 @@ int main(int argc, char **argv)
         input->Add(File);
     }
     in.close();
-    //system("rm simulFiles.txt");
   }
   TDatabasePDG pdg;
-  //Double_t kMe =pdg.GetParticle(11)->Mass();
+  
   const char* NtupleName;
-  //Float_t is_pion=0;
+  
   TString     VarList = "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:evnt:pid";
   Int_t Nvar = VarList.CountChar(':')+1;
   Float_t *vars = new Float_t[Nvar];
   Int_t evntpos = 16;
-  //Float_t vars2[Nvar];
-  // ORIGINAL FULL VARIABLE LIST
-  //"TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:E:Ee:Pe:Ect:Sct:Ecr:Scr:evnt:Px:Py:Pz:Xe:Ye:Ze:Xec:Yec:Zec:TEc:ECX:ECY:ECZ:Pex:Pey:Pez:Ein:Eout:Eine:Eoute:pid:Betta:vxh:vyh:vzh:is_pion:k";
+  
   
   TVector3 *vert;
   TIdentificator *t = new TIdentificator(input);
@@ -79,12 +72,7 @@ int main(int argc, char **argv)
   TNtuple *ntuple = new TNtuple(NtupleName,"reconstructed particles",VarList);
   TNtuple *ntuple_thrown = 0;
   TNtuple *e_thrown=0;
-  //TTree *tree_thrown  = new TTree("T","particle production events");
-  //Int_t particle_event;
-  //tree_thrown->Branch("branch_thrown1",&particle_event,"particle_event/I");
-  //Float_t *ntuple_branch;
-  //tree_thrown->Branch("branch_thrown",&ntuple_branch,VarList);
-  
+    
   
   if(simul_key == 1) {
     ntuple_thrown = new TNtuple("ntuple_thrown","thrown particles",VarList);
@@ -92,32 +80,31 @@ int main(int argc, char **argv)
   }
   
   
-//  TH1F *ht = new TH1F("ht","tdiff",1000,-15,15); 
+
   cout.width(4);
   input->Next();
 
   for (Int_t k = 0; k < nEntries; k++) 
-    // for (Int_t k = 0; k < 100; k++) 
     {
-
+      
       Int_t nRows = input->GetNRows("EVNT");
       //Int_t nRows = input->GetNRows("GSIM");
       
       Int_t GSIMrows = input->GetNRows("GSIM");
-      Int_t to_fill = std::abs(GSIMrows-nRows); // need to fill the difference
+      Int_t to_fill = std::abs(GSIMrows-nRows); // in order to fill the difference
       const char * tt = "C";
 
-      //cout << k << endl;
+      
       
       ////////////////////////
       // PION+ FILTER
       bool PionEvent = false;
-      bool RareTH = false;
-      bool RareREC = false;
+      bool RareTH = false;      // rare thrown event
+      bool RareREC = false;     // rare reconstructed event
       for ( Int_t i=1; i < nRows; i++ )
 	{
 	  TString categ = t->GetCategorization(i,tt);
-	  if ( t->GetCategorization(0,tt) != "electron" )
+	  if ( t->GetCategorization(0,tt) != "electron" )  // POR QUE???
 	    break;
 	  if ( categ == "high energy pion +" || categ == "low energy pion +" )
 	    {
