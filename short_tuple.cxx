@@ -18,7 +18,7 @@ int main(int argc, char **argv)
   bool simul_key = 0;
   
   TClasTool *input = new TClasTool();
-  input->InitDSTReader("ROOTDSTR");
+  input->InitDSTReader("ROOTDSTR";)
   
   if(argc == 1)
     {    
@@ -26,7 +26,8 @@ int main(int argc, char **argv)
       ifstream in("dataFiles.txt", ios::in);
       if (!in)
 	{
-	  cerr << "File Not Opened!" << endl;
+	  cerr << "File Not Opened!\n";
+	  cerr << "To use simulFiles.txt execute with any argument e.g. ./short_tuple asdf" << endl;
 	  exit(1);
 	}
       while (in >> File)
@@ -278,10 +279,15 @@ int main(int argc, char **argv)
 	      e_vars[0] = t -> Q2(1);
 	      e_vars[1] = t -> W(1);
 	      e_vars[2] = t -> Nu(1);
-	      e_vars[3] = t -> Z(0,1);
-	      e_vars[4] = t -> Px(0,1);
-	      e_vars[5] = t -> Py(0,1);
-	      e_vars[6] = t -> Pz(0,1);
+	      e_vars[3] = 0;
+	      e_vars[4] = 0;
+	      e_vars[5] = 0;
+	      e_vars[6] = t -> X(0,1);
+	      e_vars[7] = t -> Y(0,1);
+	      e_vars[8] = t -> Z(0,1);
+	      e_vars[9] = t -> Px(0,1);
+	      e_vars[10] = t -> Py(0,1);
+	      e_vars[11] = t -> Pz(0,1);
 	      e_vars[12] = k;
 	      
 	      e_thrown->Fill(e_vars);
@@ -296,10 +302,15 @@ int main(int argc, char **argv)
 	      e_vars[5] = 0;
 	      e_vars[6] = 0;
 	      e_vars[7] = 0;
+	      e_vars[8] = 0;
+	      e_vars[9] = 0;
+	      e_vars[10] = 0;
+	      e_vars[11] = 0;
 	      e_vars[12] = 0;
 	      
 	      e_thrown->Fill(e_vars);
 	    }
+
 	  
 	  for( Int_t i=1; i < GSIMrows; i++ )
 	    {
