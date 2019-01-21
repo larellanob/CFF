@@ -18,7 +18,7 @@ int main(int argc, char **argv)
   bool simul_key = 0;
   
   TClasTool *input = new TClasTool();
-  input->InitDSTReader("ROOTDSTR";)
+  input->InitDSTReader("ROOTDSTR");
   
   if(argc == 1)
     {    
