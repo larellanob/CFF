@@ -80,21 +80,21 @@ int main(int argc, char **argv)
     }
   else
     { 
-      NtupleName = "particles_recons";
+      NtupleName = "ntuple_accept";
       output = new TFile("local/prune_simul.root", "RECREATE", "simul_Fe");
     }
 
   TNtuple *e_recons = new TNtuple("e_rec","Reconstructed Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
   Float_t e_vars[e_recons->GetNvar()];
 
-  TNtuple *particles_recons = new TNtuple(NtupleName,"reconstructed particles",VarList);
-  TNtuple *particles_thrown = 0;
+  TNtuple *ntuple_accept = new TNtuple(NtupleName,"reconstructed particles",VarList);
+  TNtuple *ntuple_thrown = 0;
   TNtuple *e_thrown=0;
     
   
   if(simul_key == 1)
     {
-      particles_thrown = new TNtuple("particles_thrown","thrown particles",VarList);
+      ntuple_thrown = new TNtuple("ntuple_thrown","thrown particles",VarList);
       e_thrown = new TNtuple("e_thrown","thrown Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
     }
   // VARIABLES and NTUPLES
@@ -188,7 +188,7 @@ int main(int argc, char **argv)
 		  for ( Int_t ll = 0; ll < Nvar; ll++)
 		    particle_vars[ll] = 0;
 		  particle_vars[evntpos] = k;
-		  particles_recons->Fill(particle_vars);
+		  ntuple_accept->Fill(particle_vars);
 		}
 	    }
 	  for (Int_t i = 1; i < nRows; i++) 
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
 			    )
 			   )
 			 ); f++;
-	      particles_recons->Fill(particle_vars);
+	      ntuple_accept->Fill(particle_vars);
 
 
 	      if ( i  == nRows-1 && GSIMrows > nRows )
@@ -235,7 +235,7 @@ int main(int argc, char **argv)
 		      for ( Int_t ll = 0; ll < Nvar; ll++)
 			particle_vars[ll] = 0;
 		      particle_vars[evntpos] = k;
-		      particles_recons->Fill(particle_vars);
+		      ntuple_accept->Fill(particle_vars);
 		    }
 		}
 
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 		particle_vars[ll] = 0;
 	      particle_vars[evntpos] = k;
 	      //particle_vars[Nvar] = k;
-	      particles_recons->Fill(particle_vars);
+	      ntuple_accept->Fill(particle_vars);
 	    }
 	}
       
@@ -322,7 +322,7 @@ int main(int argc, char **argv)
 	      particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
 	      particle_vars[f] = k; f++;
 	      particle_vars[f] = t -> Id(i,1); f++;
-	      particles_thrown->Fill(particle_vars);
+	      ntuple_thrown->Fill(particle_vars);
 	    }
 	  
 	  
@@ -333,7 +333,7 @@ int main(int argc, char **argv)
 		  for ( Int_t ll = 0; ll < Nvar; ll++ )
 		    particle_vars[ll] = 0;
 		  particle_vars[evntpos] = k;
-		  particles_thrown->Fill(particle_vars);
+		  ntuple_thrown->Fill(particle_vars);
 		}
 	    }
 	} // if( simul_key == 1 )
@@ -347,7 +347,7 @@ int main(int argc, char **argv)
 	      for ( Int_t ll = 0; ll < Nvar; ll++ )
 		particle_vars[ll] = 0;
 	      particle_vars[evntpos] = k;
-	      particles_thrown->Fill(particle_vars);
+	      ntuple_thrown->Fill(particle_vars);
 	    } 
 	}
       
