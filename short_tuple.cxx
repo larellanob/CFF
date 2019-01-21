@@ -52,6 +52,15 @@ int main(int argc, char **argv)
 	}
       in.close();
     }
+
+  // OUTPUT FILE
+  std::string out_filename = "local/CFF_";
+  std::string target_name = string(argv[1]);
+  std::string out_extension = ".root";
+  out_filename.append(target_name);
+  out_filename.append(out_extension);
+  target_name.append(" simulation: events which include pi+");
+  
   // FILES
   //////////////////////
 
@@ -82,7 +91,7 @@ int main(int argc, char **argv)
   else
     { 
       NtupleName = "ntuple_accept";
-      output = new TFile("local/prune_simul.root", "RECREATE", "simul_Fe");
+      output = new TFile(out_filename.c_str(), "RECREATE", target_name.c_str());
     }
 
   TNtuple *e_recons = new TNtuple("e_rec","Reconstructed Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
