@@ -65,6 +65,12 @@ int main(int argc, char **argv)
   //////////////////////
 
 
+
+  ///// TTrees
+  TTree *ntuple_thrown_tree = new TTree("ntuple_thrown_tree","thrown particles now in a tree");
+  
+
+  
   //////////////////////
   // VARIABLES and NTUPLES
   TDatabasePDG pdg;
