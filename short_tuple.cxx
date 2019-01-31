@@ -55,8 +55,8 @@ int main(int argc, char **argv)
 
   // OUTPUT FILE
   std::string out_filename = "local/CFF_";
-  std::string target_name = string(argv[1]);
-  std::string out_extension = ".root";
+  std::string target_name = string(argv[1]); // DONT DELETE WHEN REMOVING NTUPLE
+  std::string out_extension = ".root";// DONT DELETE WHEN REMOVING NTUPLE
   out_filename.append(target_name);
   out_filename.append(out_extension);
   target_name.append(" simulation: events which include pi+");
@@ -64,11 +64,6 @@ int main(int argc, char **argv)
   // FILES
   //////////////////////
 
-
-
-  ///// TTrees
-  TTree *ntuple_thrown_tree = new TTree("ntuple_thrown_tree","thrown particles now in a tree");
-  
 
   
   //////////////////////
@@ -81,6 +76,34 @@ int main(int argc, char **argv)
   Int_t Nvar = VarList.CountChar(':')+1;
   Float_t *particle_vars = new Float_t[Nvar];
   Int_t evntpos = 16;
+
+  ///// TTrees implementation
+  // OUTPUT FILE
+  std::string out_filename_tree = "local/CFF_TREE";
+  std::string target_name2 = string(argv[1]);
+  out_filename_tree.append(target_name2);
+  out_filename_tree.append(out_extension);
+  TFile *out_tree = new TFile(out_filename_tree.c_str(), "RECREATE", target_name2.c_str());
+  
+  
+  // TTREE 
+  TTree tree_thrown("tree_thrown","tree of all thrown particles");
+  TTree tree_accept("tree_accept","tree of all reconstructed particles");
+  // point the tree to the right places
+  Float_t tree_variables[Nvar][50]; // max of 50 particles per event
+  TString leafname;
+  TString leaflist;
+  Ssiz_t from = 0;
+  Int_t eventsize = 1;
+  tree_thrown.Branch("eventsize",&eventsize,"eventsize/I");
+  tree_accept.Branch("eventsize",&eventsize,"eventsize/I");
+  for ( Int_t i = 0; i < Nvar; ++i )
+    {
+      VarList.Tokenize(leafname,from,":");
+      leaflist = leafname+"[eventsize]/F"; // F is for float
+      tree_thrown.Branch(leafname.Data(), &tree_variables[i][1], leaflist.Data()); 
+      tree_accept.Branch(leafname.Data(), &tree_variables[i][1], leaflist.Data());
+    }
   
   
   TVector3 *vert;
@@ -241,6 +264,11 @@ int main(int argc, char **argv)
 			    )
 			   )
 			 ); f++;
+	      for ( Int_t w = 0; w < Nvar; ++w )
+		{
+		  tree_variables[w][i] = particle_vars[w];
+		}
+	      
 	      ntuple_accept->Fill(particle_vars);
 
 
@@ -257,6 +285,10 @@ int main(int argc, char **argv)
 
 	      
 	    } // end: for (Int_t i = 1; i < nRows; i++)
+	  out_tree->cd();
+	  eventsize = nRows-1;
+	  tree_accept.Fill();
+	  output->cd();
 	} // end:  if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")
       
       else // if(nRows>0 && (t->GetCategorization(0,tt)) != "electron")
@@ -325,7 +357,7 @@ int main(int argc, char **argv)
 	      
 	      e_thrown->Fill(e_vars);
 	    }
-
+	  
 	  
 	  for( Int_t i=1; i < GSIMrows; i++ )
 	    {
@@ -348,10 +380,18 @@ int main(int argc, char **argv)
 	      particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
 	      particle_vars[f] = k; f++;
 	      particle_vars[f] = t -> Id(i,1); f++;
+
+	      for ( Int_t w = 0; w < Nvar; ++w )
+		{
+		  tree_variables[w][i] = particle_vars[w];
+		}
+	      
 	      ntuple_thrown->Fill(particle_vars);
 	    }
-	  
-	  
+	  eventsize = GSIMrows-1;
+	  out_tree->cd();
+	  tree_thrown.Fill();
+	  output->cd();
 	  if ( nRows > GSIMrows )
 	    {
 	      for ( Int_t i = 0; i < to_fill; i++ )
@@ -383,6 +423,8 @@ int main(int argc, char **argv)
     } // for (Int_t k = 0; k < nEntries; k++) 
   output->Write();
   output->Close();
+  out_tree->Write();
+  out_tree->Close();
   cout << "Done." << endl;
   return 0;
 }
