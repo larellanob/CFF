@@ -24,7 +24,7 @@ ifndef CLASTOOL
         	       -L$(ANALYSER)/slib/ -lTIdentificator \
 	-lSpectrum -lEG
 
-FILES := short_tuple
+FILES := short_tree short_tuple
 
 
 .PHONY: all clean
