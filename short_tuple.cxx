@@ -300,62 +300,73 @@ int main(int argc, char **argv)
 	      e_vars[12] = k;
 	      
 	      e_thrown->Fill(e_vars);
-	    }
-	  else
-	    {
-	      e_vars[0] = 0;
-	      e_vars[1] = 0;
-	      e_vars[2] = 0;
-	      e_vars[3] = 0;
-	      e_vars[4] = 0;
-	      e_vars[5] = 0;
-	      e_vars[6] = 0;
-	      e_vars[7] = 0;
-	      e_vars[8] = 0;
-	      e_vars[9] = 0;
-	      e_vars[10] = 0;
-	      e_vars[11] = 0;
-	      e_vars[12] = 0;
-	      
-	      e_thrown->Fill(e_vars);
-	    }
 
-	  
-	  for( Int_t i=1; i < GSIMrows; i++ )
-	    {
-	      Int_t f = 0;
-	      particle_vars[f] = t -> ElecVertTarg(1); f++;
-	      particle_vars[f] = t -> Q2(1); f++;
-	      particle_vars[f] = t -> Nu(1); f++;
-	      particle_vars[f] = t -> Xb(1); f++;
-	      particle_vars[f] = t -> W(1); f++;
-	      particle_vars[f] = t -> Sector(0,1); f++;
-	      particle_vars[f] = t -> ThetaPQ(i,1); f++;
-	      particle_vars[f] = t -> PhiPQ(i,1); f++;
-	      particle_vars[f] = t -> Zh(i,1); f++;
-	      particle_vars[f] = TMath::Sqrt(t -> Pt2(i,1)); f++;
-	      particle_vars[f] = t -> Mx2(i,1); f++;
-	      particle_vars[f] = t -> Xf(i,1); f++;
-	      particle_vars[f] = t -> T(i,1); f++;
-	      particle_vars[f] = t -> Momentum(i,1); f++;
-	      particle_vars[f] = 0; f++;//t -> TimeCorr4(0.139570,i);
-	      particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
-	      particle_vars[f] = k; f++;
-	      particle_vars[f] = t -> Id(i,1); f++;
-	      ntuple_thrown->Fill(particle_vars);
-	    }
-	  
-	  
-	  if ( nRows > GSIMrows )
-	    {
-	      for ( Int_t i = 0; i < to_fill; i++ )
+	      for( Int_t i=1; i < GSIMrows; i++ )
 		{
-		  for ( Int_t ll = 0; ll < Nvar; ll++ )
-		    particle_vars[ll] = 0;
-		  particle_vars[evntpos] = k;
+		  Int_t f = 0;
+		  particle_vars[f] = t -> ElecVertTarg(1); f++;
+		  particle_vars[f] = t -> Q2(1); f++;
+		  particle_vars[f] = t -> Nu(1); f++;
+		  particle_vars[f] = t -> Xb(1); f++;
+		  particle_vars[f] = t -> W(1); f++;
+		  particle_vars[f] = t -> Sector(0,1); f++;
+		  particle_vars[f] = t -> ThetaPQ(i,1); f++;
+		  particle_vars[f] = t -> PhiPQ(i,1); f++;
+		  particle_vars[f] = t -> Zh(i,1); f++;
+		  particle_vars[f] = TMath::Sqrt(t -> Pt2(i,1)); f++;
+		  particle_vars[f] = t -> Mx2(i,1); f++;
+		  particle_vars[f] = t -> Xf(i,1); f++;
+		  particle_vars[f] = t -> T(i,1); f++;
+		  particle_vars[f] = t -> Momentum(i,1); f++;
+		  particle_vars[f] = 0; f++;//t -> TimeCorr4(0.139570,i);
+		  particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
+		  particle_vars[f] = k; f++;
+		  particle_vars[f] = t -> Id(i,1); f++;
 		  ntuple_thrown->Fill(particle_vars);
 		}
+
+	      if ( nRows > GSIMrows )
+		{
+		  for ( Int_t i = 0; i < to_fill; i++ )
+		    {
+		      for ( Int_t ll = 0; ll < Nvar; ll++ )
+			particle_vars[ll] = 0;
+		      particle_vars[evntpos] = k;
+		      ntuple_thrown->Fill(particle_vars);
+		    }
+		}
 	    }
+	  
+	  
+	  else
+	    {
+	      for ( Int_t i = 0; i < 13; i++ )
+		{
+		  e_vars[i] = 0;
+		}
+	      for ( Int_t i = 1; i < GSIMrows; i++ )
+		{
+		  for ( Int_t j = 0;  j< Nvar; j++ )
+		    {
+		      particle_vars[j] = 0;
+		    }
+		  ntuple_thrown->Fill(particle_vars);
+		}
+	      e_thrown->Fill(e_vars);
+	      
+	      if ( nRows > GSIMrows )
+		{
+		  for ( Int_t i = 0; i < to_fill; i++ )
+		    {
+		      for ( Int_t ll = 0; ll < Nvar; ll++ )
+			particle_vars[ll] = 0;
+		      particle_vars[evntpos] = k;
+		      ntuple_thrown->Fill(particle_vars);
+		    }
+		}
+	    }
+
+
 	} // if( simul_key == 1 )
       else
 	{
