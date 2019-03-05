@@ -164,8 +164,8 @@ int main(int argc, char **argv)
       ///////////////////////////////
       ///////////////////////////////
       
-      
-      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t -> Id(0,1)==3 )   // careful with this, only works with simulations
+      // the second condition makes the code only work for simulation files 
+      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t -> Id(0,1)==3 )
 	{
 	  // variables reminder
 	  //  0:1: 2:   3:   4:   5:  6:  7:  8:  9: 10: 11:   12
