@@ -79,8 +79,7 @@ int main(int argc, char **argv)
   out_filename_tree.append(target_name2);
   out_filename_tree.append(out_extension);
   TFile *out_tree = new TFile(out_filename_tree.c_str(), "RECREATE", target_name2.c_str());
-  
-  
+
   // TTREE
   
   TTree tree_thrown("tree_thrown","tree of all thrown particles");
@@ -421,7 +420,11 @@ int main(int argc, char **argv)
 	  band = true;
 	  break;
 	}
-    } // for (Int_t k = 0; k < nEntries; k++) 
+    } // for (Int_t k = 0; k < nEntries; k++)
+
+  
+  TTree version("version",VERSION);
+  
   out_tree->Write();
   out_tree->Close();
   cout << "Done." << endl;
