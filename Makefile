@@ -1,5 +1,7 @@
 .DELETE_ON_ERROR:
 
+GIT_VERSION := $(shell git describe --tags --long --dirty --always)
+
 ifndef CLASTOOL
     $(error "Please set the variable CLASTOOL")
     endif
@@ -10,7 +12,7 @@ ifndef CLASTOOL
     ROOTGLIBS := $(shell $(ROOTCONFIG) --glibs)
     
     CXX := c++
-    CXXFLAGS := -O2 -Wall -fPIC $(ROOTCFLAGS)
+    CXXFLAGS := -O2 -Wall -fPIC $(ROOTCFLAGS) -DVERSION=\"$(GIT_VERSION)\"
     #CXXFLAGS := -g -O0 -Wall -fPIC $(ROOTCFLAGS) # debug info
     LD := c++
     LDFLAGS := -O2 $(ROOTLDFLAGS)
