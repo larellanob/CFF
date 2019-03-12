@@ -8,11 +8,15 @@
 #include "TMath.h"
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
-
+#include "TBenchmark.h"
 
 int main(int argc, char **argv)
 {
+  TBenchmark bench;
+  bool verbose = false;
 
+  bench.Start("bench");
+  
   //////////////////////
   // FILES
   bool simul_key = 0;
@@ -73,17 +77,30 @@ int main(int argc, char **argv)
 
   ///// TTrees implementation
   // OUTPUT FILE
-  std::string out_filename_tree = "local/CFF_TREE";
-  std::string target_name2 = string(argv[1]);
-  std::string out_extension = ".root";// DONT DELETE WHEN REMOVING NTUPLE
-  out_filename_tree.append(target_name2);
-  out_filename_tree.append(out_extension);
-  TFile *out_tree = new TFile(out_filename_tree.c_str(), "RECREATE", target_name2.c_str());
-
-  // TTREE
   
+  std::string out_filename_tree = "local/CFFTree_";
+  
+  // DATA
+  std::string target_name2 = "data";
+  // SIMULATION
+  if ( simul_key == 1 )
+    {
+      target_name2 = string(argv[1]);
+    }
+  
+  // General
+  out_filename_tree.append(target_name2);
+  std::string out_extension = ".root";
+  out_filename_tree.append(out_extension);
+  TFile out_tree(out_filename_tree.c_str(), "RECREATE", target_name2.c_str());
+
+  /////// TTREE
+  // Data
+  
+  TTree tree_data("tree_data","data of reconstructed particles");
   TTree tree_thrown("tree_thrown","tree of all thrown particles");
   TTree tree_accept("tree_accept","tree of all reconstructed particles");
+  
   
   // point the tree to the right places
   Float_t tree_variables[Nvar][50]; // max of 50 particles per event
@@ -91,12 +108,16 @@ int main(int argc, char **argv)
   TString leaflist;
   Ssiz_t from = 0;
   Int_t eventsize = 0;
+
+  tree_data.Branch("eventsize",&eventsize,"eventsize/I");
   tree_thrown.Branch("eventsize",&eventsize,"eventsize/I");
   tree_accept.Branch("eventsize",&eventsize,"eventsize/I");
+  
   for ( Int_t i = 0; i < Nvar; ++i )
     {
       VarList.Tokenize(leafname,from,":");
       leaflist = leafname+"[eventsize]/F"; // F is for float
+      tree_data.Branch(leafname.Data(), &tree_variables[i][1], leaflist.Data());
       tree_thrown.Branch(leafname.Data(), &tree_variables[i][1], leaflist.Data()); 
       tree_accept.Branch(leafname.Data(), &tree_variables[i][1], leaflist.Data());
     }
@@ -112,7 +133,7 @@ int main(int argc, char **argv)
   TNtuple *e_recons = new TNtuple("e_rec","Reconstructed Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
   Float_t e_vars[e_recons->GetNvar()];
   TNtuple *e_thrown = 0;
-  if(simul_key == 1)
+  if( simul_key == 1 )
     {
       e_thrown = new TNtuple("e_thrown","thrown Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt");
     }
@@ -124,20 +145,29 @@ int main(int argc, char **argv)
   cout.width(4);
   input->Next();
   bool band = false;
-  
+  Int_t GSIMrows, to_fill = -8;
+  ProcInfo_t procinfo;
   for (Int_t k = 0; k < nEntries; k++) 
     {
-      Int_t nRows = input->GetNRows("EVNT");
-      //Int_t nRows = input->GetNRows("GSIM");
       
-      Int_t GSIMrows = input->GetNRows("GSIM");
-      Int_t to_fill = std::abs(GSIMrows-nRows); // in order to fill the difference
+      gSystem->GetProcInfo(&procinfo);
+      Double_t totmem = (Double_t) (procinfo.fMemResident);
+      
+      Int_t nRows = input->GetNRows("EVNT");
+
+
+      if ( simul_key == 1 )
+	{
+	  GSIMrows = input->GetNRows("GSIM");
+	  to_fill = std::abs(GSIMrows-nRows); // in order to fill the difference
+	  //cout << "PREVIO: " << GSIMrows << " " << nRows << " " << to_fill << endl;
+	}
       const char * tt = "C";
       
       ////////////////////////
       // PION+ FILTER
       bool PionEvent = false;
-      for ( Int_t i=1; i < nRows; i++ )
+      for ( Int_t i = 1; i < nRows; i++ )
 	{
 	  TString categ = t->GetCategorization(i,tt);
 	  if ( t->GetCategorization(0,tt) != "electron" )  // electron == trigger
@@ -151,19 +181,26 @@ int main(int argc, char **argv)
 	    }
 	}
 
-      for ( Int_t i = 1; i < GSIMrows; i++ )
+      if ( simul_key == 1 )
 	{
-	  if ( t->Id(i,1) == 8)
+	  GSIMrows = input->GetNRows("GSIM");
+	  for ( Int_t i = 1; i < GSIMrows; i++ )
 	    {
-	      PionEvent = true;
-	      break;
+	      if ( t->Id(i,1) == 8)
+		{
+		  PionEvent = true;
+		  break;
+		}
 	    }
 	}
       
       if ( PionEvent == false )
 	{
-	  cout<<std::right<<float(k+1)/nEntries*100<<"%\r";
-	  cout.flush();
+	  if ( verbose == true )
+	    {
+	      cout << std::right <<  std::setw(12) << float(k+1)/nEntries*100.0 << "% mem: " << totmem << "\r";
+	      cout.flush();
+	    }
 	  input->Next();
 	  continue;
 	}
@@ -177,9 +214,17 @@ int main(int argc, char **argv)
       ///////////////////////////////
       ///////////////////////////////
       
-      // the second condition makes the code only work for simulation files 
-      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t-> Id(0,1)== 3) 
+      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" ) 
 	{
+
+	  // MARCH8
+	  if ( simul_key == 1 && t->Id(0,1)!=3 )
+	    {
+	      input->Next();
+	      continue;
+	    }
+
+	  
 	  // variables reminder
 	  //  0:1: 2:   3:   4:   5:  6:  7:  8:  9: 10: 11:   12
 	  // Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
@@ -211,10 +256,12 @@ int main(int argc, char **argv)
 		  for ( Int_t ll = 0; ll < Nvar; ll++)
 		    particle_vars[ll] = 0;
 		  particle_vars[evntpos] = k;
-		  //ntuple_accept->Fill(particle_vars);
 		}
 	      eventsize=0;
-	      tree_accept.Fill();
+	      if ( simul_key == 1 )
+		tree_accept.Fill();
+	      if ( simul_key == 0 )
+		tree_data.Fill();
 	    }
 	  else if ( nRows != 1 )
 	    {
@@ -258,42 +305,42 @@ int main(int argc, char **argv)
 		    }
 		  
 		  //ntuple_accept->Fill(particle_vars);
-		  
-		  
-		  if ( i  == nRows-1 && GSIMrows > nRows )
-		    {
-		      for ( Int_t l = 0; l < to_fill; l++ )
-			{
-			  for ( Int_t ll = 0; ll < Nvar; ll++)
-			    particle_vars[ll] = 0;
-			  particle_vars[evntpos] = k;
-			  //ntuple_accept->Fill(particle_vars);
-			}
-		    }
-
-	      
 		} // end: for (Int_t i = 1; i < nRows; i++)
 	      eventsize=nRows-1;
-	      tree_accept.Fill();
+	      if ( simul_key == 1 )
+		tree_accept.Fill();
+	      if ( simul_key == 0 )
+		tree_data.Fill();
 	    }
 	  
 	} // end:  if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")
       
       else // if(nRows>0 && (t->GetCategorization(0,tt)) != "electron")
 	{
+	  if ( simul_key == 1  && t->Id(0,1)!= 3)
+	    {
+	      input->Next();
+	      continue;
+	    }
 	  for ( Int_t l = 0; l < 13; l++ )
 	    e_vars[l] = 0;
 	  e_recons->Fill(e_vars);
 
 	  eventsize=0;
-	  tree_accept.Fill();
-	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
+	  if ( simul_key == 1 )
+	    tree_accept.Fill();
+	  if ( simul_key == 0 )
+	    tree_data.Fill();
+	  if ( simul_key == 1)
 	    {
-	      for ( Int_t ll = 0; ll < Nvar; ll++ )
-		particle_vars[ll] = 0;
-	      particle_vars[evntpos] = k;
-	      //particle_vars[Nvar] = k;
-	      //ntuple_accept->Fill(particle_vars);
+	      for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
+		{
+		  for ( Int_t ll = 0; ll < Nvar; ll++ )
+		    particle_vars[ll] = 0;
+		  particle_vars[evntpos] = k;
+		  //particle_vars[Nvar] = k;
+		  //ntuple_accept->Fill(particle_vars);
+		}
 	    }
 	}
       
@@ -304,12 +351,18 @@ int main(int argc, char **argv)
       //////// T H R O W N /////////
       //////////////////////////////
       //////////////////////////////
-      
+
+      if ( simul_key != 1 )
+	{
+	  input->Next();
+	  continue;
+	}
       
       
       
       if( simul_key == 1 )//&& t -> Id(0,1)==3 /*&& t -> Q2(1) > 1. && t -> W(1) > 2. && t -> Nu(1) / 5.015 < 0.85*/ )
 	{
+	  // MARCH8
 	  if (t -> Id(0,1)==3 )
 	    {
 	      e_vars[0] = t -> Q2(1);
@@ -361,16 +414,18 @@ int main(int argc, char **argv)
 	      eventsize = GSIMrows-1;
 	      tree_thrown.Fill();
 	    }
+
+	  // MARCH8
 	  else if ( t->Id(0,1) != 3 )
 	    {
-	      for ( Int_t i = 0; i < 13; i++ )
-		{
-		  e_vars[i] = 0;
-		}
-	      e_vars[12] = k;
-	      e_thrown->Fill(e_vars);
-	      eventsize=0;
-	      tree_thrown.Fill();
+	      // for ( Int_t i = 0; i < 13; i++ )
+	      // 	{
+	      // 	  e_vars[i] = 0;
+	      // 	}
+	      // e_vars[12] = k;
+	      // e_thrown->Fill(e_vars);
+	      // eventsize=0;
+	      // tree_thrown.Fill();
 	      input->Next();
 	      
 	      continue;
@@ -387,30 +442,34 @@ int main(int argc, char **argv)
 		}
 	      if ( GSIMrows == 0 )
 		{
+		  cout << GSIMrows << " " << nRows << " " << to_fill << " BBBB " << simul_key << " AAAAAAAAAA " << endl;
 		  cout << " is this ever fulfilled? : " << k << endl;
 		  eventsize=0;
 		  tree_thrown.Fill();
 		}
 	    }
 	} // if( simul_key == 1 )
-      else // THIS IS NEVER FULFILLED
-	{
-	  cout << "milagro en " << k << endl;
-	  for ( Int_t i = 0; i < 13; i++ )
-	    e_vars[i] = 0;
-	  e_thrown->Fill(e_vars);
-	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
-	    {
-	      for ( Int_t ll = 0; ll < Nvar; ll++ )
-		particle_vars[ll] = 0;
-	      particle_vars[evntpos] = k;
-	    } 
-	}
-      
+      // else // THIS IS NEVER FULFILLED
+      // 	{
+      // 	  cout << "milagro en " << k << endl;
+      // 	  for ( Int_t i = 0; i < 13; i++ )
+      // 	    e_vars[i] = 0;
+      // 	  e_thrown->Fill(e_vars);
+      // 	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
+      // 	    {
+      // 	      for ( Int_t ll = 0; ll < Nvar; ll++ )
+      // 		particle_vars[ll] = 0;
+      // 	      particle_vars[evntpos] = k;
+      // 	    } 
+      // 	}
+
+            
+      //cout<<std::right<<float(k+1)/nEntries*100<<"%\t" << "mem: " << totmem << "\r";
       cout<<std::right<<float(k+1)/nEntries*100<<"%\r";
       cout.flush();
       input->Next();
- 
+
+     
       if ( tree_accept.GetEntries() != tree_thrown.GetEntries() && band == false )
 	{
 	  cout << "k = " << k << endl;
@@ -420,13 +479,41 @@ int main(int argc, char **argv)
 	  band = true;
 	  break;
 	}
+
     } // for (Int_t k = 0; k < nEntries; k++)
 
+  // if ( simul_key == 0 )
+  //   {
+  //     ~TTree tree_thrown;
+  //     ~TTree tree_accept;
+  //   }
+  // if ( simul_key == 1 )
+  //   {
+  //     ~TTree tree_data;
+  //   }
   
   TTree version("version",VERSION);
+  version.Write();
   
-  out_tree->Write();
-  out_tree->Close();
+  if ( simul_key == 0 )
+    {
+      tree_data.Write();
+      e_recons->Write();
+    }
+
+  if ( simul_key == 1 )
+    {
+      tree_thrown.Write();
+      tree_accept.Write();
+      e_thrown->Write();
+      e_recons->Write();
+    }
+
+
+      
+  //out_tree.Write();
+  out_tree.Close();
   cout << "Done." << endl;
+  bench.Show("bench");
   return 0;
 }
