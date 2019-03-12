@@ -113,14 +113,18 @@ int main(int argc, char **argv)
 
   cout.width(4);
   input->Next();
-
+  Int_t GSIMrows, to_fill = -1;
+  
   for (Int_t k = 0; k < nEntries; k++) 
     {
       Int_t nRows = input->GetNRows("EVNT");
       //Int_t nRows = input->GetNRows("GSIM");
-      
-      Int_t GSIMrows = input->GetNRows("GSIM");
-      Int_t to_fill = std::abs(GSIMrows-nRows); // in order to fill the difference
+
+      if ( simul_key == 1 )
+	{
+	  GSIMrows = input->GetNRows("GSIM");
+	  to_fill = std::abs(GSIMrows-nRows); // in order to fill the difference
+	}
       const char * tt = "C";
       
       ////////////////////////
@@ -138,12 +142,15 @@ int main(int argc, char **argv)
 	    }
 	}
 
-      for ( Int_t i = 1; i < GSIMrows; i++ )
+      if ( simul_key == 1 )
 	{
-	  if ( t->Id(i,1) == 8)
+	  for ( Int_t i = 1; i < GSIMrows; i++ )
 	    {
-	      PionEvent = true;
-	      break;
+	      if ( t->Id(i,1) == 8)
+		{
+		  PionEvent = true;
+		  break;
+		}
 	    }
 	}
       
@@ -164,9 +171,13 @@ int main(int argc, char **argv)
       ///////////////////////////////
       ///////////////////////////////
       
-      // the second condition makes the code only work for simulation files 
-      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t -> Id(0,1)==3 )
+      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" )
 	{
+	  if ( simul_key == 1 && t->Id(0,1)!=3 )
+	    {
+	      input->Next();
+	      continue;
+	    }
 	  // variables reminder
 	  //  0:1: 2:   3:   4:   5:  6:  7:  8:  9: 10: 11:   12
 	  // Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
@@ -237,15 +248,17 @@ int main(int argc, char **argv)
 			 ); f++;
 	      ntuple_accept->Fill(particle_vars);
 
-
-	      if ( i  == nRows-1 && GSIMrows > nRows )
+	      if ( simul_key == 1 )
 		{
-		  for ( Int_t l = 0; l < to_fill; l++ )
+		  if ( i  == nRows-1 && GSIMrows > nRows )
 		    {
-		      for ( Int_t ll = 0; ll < Nvar; ll++)
-			particle_vars[ll] = 0;
-		      particle_vars[evntpos] = k;
-		      ntuple_accept->Fill(particle_vars);
+		      for ( Int_t l = 0; l < to_fill; l++ )
+			{
+			  for ( Int_t ll = 0; ll < Nvar; ll++)
+			    particle_vars[ll] = 0;
+			  particle_vars[evntpos] = k;
+			  ntuple_accept->Fill(particle_vars);
+			}
 		    }
 		}
 
@@ -259,13 +272,16 @@ int main(int argc, char **argv)
 	    e_vars[l] = 0;
 	  e_recons->Fill(e_vars);
 
-	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
+	  if ( simul_key == 1 )
 	    {
-	      for ( Int_t ll = 0; ll < Nvar; ll++ )
-		particle_vars[ll] = 0;
-	      particle_vars[evntpos] = k;
-	      //particle_vars[Nvar] = k;
-	      ntuple_accept->Fill(particle_vars);
+	      for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
+		{
+		  for ( Int_t ll = 0; ll < Nvar; ll++ )
+		    particle_vars[ll] = 0;
+		  particle_vars[evntpos] = k;
+		  //particle_vars[Nvar] = k;
+		  ntuple_accept->Fill(particle_vars);
+		}
 	    }
 	}
       
@@ -371,24 +387,25 @@ int main(int argc, char **argv)
 
 
 	} // if( simul_key == 1 )
-      else
-	{
-	  for ( Int_t i = 0; i < 13; i++ )
-	    e_vars[i] = 0;
-	  e_thrown->Fill(e_vars);
-	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
-	    {
-	      for ( Int_t ll = 0; ll < Nvar; ll++ )
-		particle_vars[ll] = 0;
-	      particle_vars[evntpos] = k;
-	      ntuple_thrown->Fill(particle_vars);
-	    } 
-	}
+      // else
+      // 	{
+      // 	  for ( Int_t i = 0; i < 13; i++ )
+      // 	    e_vars[i] = 0;
+      // 	  e_thrown->Fill(e_vars);
+      // 	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
+      // 	    {
+      // 	      for ( Int_t ll = 0; ll < Nvar; ll++ )
+      // 		particle_vars[ll] = 0;
+      // 	      particle_vars[evntpos] = k;
+      // 	      ntuple_thrown->Fill(particle_vars);
+      // 	    } 
+      // 	}
       
       cout<<std::right<<float(k+1)/nEntries*100<<"%\r";
       cout.flush();
       input->Next();
-    } // for (Int_t k = 0; k < nEntries; k++) 
+    } // for (Int_t k = 0; k < nEntries; k++)
+  TTree version("version",VERSION);
   output->Write();
   output->Close();
   cout << "Done." << endl;
