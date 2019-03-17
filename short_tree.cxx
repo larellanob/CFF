@@ -216,8 +216,20 @@ int main(int argc, char **argv)
       // R E C O N S T R U C T E D //
       ///////////////////////////////
       ///////////////////////////////
+
+      if ( nRows == 0 || nRows == 1 )
+	{
+	  eventsize=0;
+	  if ( simul_key == 1 )
+	    tree_accept.Fill();
+	  if ( simul_key == 0 )
+	    tree_data.Fill();
+	  for ( Int_t l = 0; l < 13; l++ )
+	    e_vars[l] = 0;
+	  e_recons->Fill(e_vars);
+	}
       
-      if( nRows > 0 && (t->GetCategorization(0,tt)) == "electron" ) 
+      if( nRows > 1 && (t->GetCategorization(0,tt)) == "electron" ) 
 	{
 	  
 	  // flag -x
@@ -226,49 +238,36 @@ int main(int argc, char **argv)
 	      input->Next();
 	      continue;
 	    }
-
+	  
 	  // ELECTRON 
 	  // set variables
 	  SetElectronVars(e_vars, t, k, 0);
 	  // fill ntuple
 	  e_recons->Fill(e_vars);
 
-	  if ( nRows == 1 )
+
+	  // RECONSTRUCTED PARTICLES
+	  for (Int_t i = 1; i < nRows; i++) 
 	    {
-	      eventsize=0;
-	      if ( simul_key == 1 )
-		tree_accept.Fill();
-	      if ( simul_key == 0 )
-		tree_data.Fill();
-	    }
-	  else if ( nRows != 1 )
-	    {
-	      for (Int_t i = 1; i < nRows; i++) 
+	      TString category = t->GetCategorization(i,tt);
+	      // set variables		  
+	      SetParticleVars(particle_vars,t,k,i,0,category);
+	      for ( Int_t w = 0; w < Nvar; ++w )
 		{
-		  TString category = t->GetCategorization(i,tt);
-		  // RECONSTRUCTED PARTICLES
-		  // set variables		  
-		  SetParticleVars(particle_vars,t,k,i,0,category);
-		  for ( Int_t w = 0; w < Nvar; ++w )
-		    {
-		      tree_variables[w][i] = particle_vars[w];
-		    }
+		  tree_variables[w][i] = particle_vars[w];
 		}
-	      eventsize=nRows-1;
-	      if ( simul_key == 1 )
-		tree_accept.Fill();
-	      if ( simul_key == 0 )
-		tree_data.Fill();
 	    }
-	} // end:  if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")
-      
-      else // if(nRows>0 && (t->GetCategorization(0,tt)) != "electron")
+	  // fill trees
+	  eventsize=nRows-1;
+	  if ( simul_key == 1 )
+	    tree_accept.Fill();
+	  if ( simul_key == 0 )
+	    tree_data.Fill();
+	}
+
+      // also throwning away if forst particle not electron
+      else if ( nRows > 1 && (t->GetCategorization(0,tt)) != "electron" )
 	{
-	  if ( simul_key == 1  && t->Id(0,1)!= 3)
-	    {
-	      input->Next();
-	      continue;
-	    }
 	  for ( Int_t l = 0; l < 13; l++ )
 	    e_vars[l] = 0;
 	  e_recons->Fill(e_vars);
@@ -278,15 +277,6 @@ int main(int argc, char **argv)
 	    tree_accept.Fill();
 	  if ( simul_key == 0 )
 	    tree_data.Fill();
-	  if ( simul_key == 1)
-	    {
-	      for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
-		{
-		  for ( Int_t ll = 0; ll < Nvar; ll++ )
-		    particle_vars[ll] = 0;
-		  particle_vars[evntpos] = k;
-		}
-	    }
 	}
       
       if ( simul_key == 0 )
