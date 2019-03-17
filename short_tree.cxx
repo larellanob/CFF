@@ -10,6 +10,9 @@
 #include "TParticlePDG.h"
 #include "TBenchmark.h"
 
+void SetParticleVars(Float_t * particle_vars, TIdentificator * t, Int_t k, Int_t i, bool sim, TString category);
+void SetElectronVars(Float_t  * e_vars, TIdentificator * t, Int_t k, bool sim);
+
 int main(int argc, char **argv)
 {
   TBenchmark bench;
@@ -144,7 +147,7 @@ int main(int argc, char **argv)
 
   cout.width(4);
   input->Next();
-  bool band = false;
+  bool desync = false;
   Int_t GSIMrows, to_fill = -8;
   ProcInfo_t procinfo;
   for (Int_t k = 0; k < nEntries; k++) 
@@ -214,49 +217,24 @@ int main(int argc, char **argv)
       ///////////////////////////////
       ///////////////////////////////
       
-      if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" ) 
+      if( nRows > 0 && (t->GetCategorization(0,tt)) == "electron" ) 
 	{
-
-	  // MARCH8
+	  
+	  // flag -x
 	  if ( simul_key == 1 && t->Id(0,1)!=3 )
 	    {
 	      input->Next();
 	      continue;
 	    }
 
-	  
-	  // variables reminder
-	  //  0:1: 2:   3:   4:   5:  6:  7:  8:  9: 10: 11:   12
-	  // Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
-	  e_vars[0] = t -> Q2();
-	  e_vars[1] = t -> W();
-	  e_vars[2] = t -> Nu();
-	  vert = t->GetCorrectedVert();
-	  Float_t vxec=vert->X(); 
-	  Float_t vyec=vert->Y(); 
-	  Float_t vzec=vert->Z(); 
-	  e_vars[3] = vxec; 
-	  e_vars[4] = vyec; 
-	  e_vars[5] = vzec;
-	  e_vars[6] = t->X(0);
-	  e_vars[7] = t->Y(0);
-	  e_vars[8] = t->Z(0);
-	  e_vars[9] = t -> Px(0);
-	  e_vars[10] = t -> Py(0);
-	  e_vars[11] = t -> Pz(0);
-	  e_vars[12] = k;
-	  
+	  // ELECTRON 
+	  // set variables
+	  SetElectronVars(e_vars, t, k, 0);
+	  // fill ntuple
 	  e_recons->Fill(e_vars);
 
-	  // fill with zeroes if needed
 	  if ( nRows == 1 )
 	    {
-	      for ( Int_t l = 1; l < GSIMrows; l++ )
-		{
-		  for ( Int_t ll = 0; ll < Nvar; ll++)
-		    particle_vars[ll] = 0;
-		  particle_vars[evntpos] = k;
-		}
 	      eventsize=0;
 	      if ( simul_key == 1 )
 		tree_accept.Fill();
@@ -267,52 +245,21 @@ int main(int argc, char **argv)
 	    {
 	      for (Int_t i = 1; i < nRows; i++) 
 		{
-		  
 		  TString category = t->GetCategorization(i,tt);
-		  
-		  // other possible filters
-		  // if (category == "gamma" || category == "pi-" || category == "high energy pion +" || category == "low energy pion +" || category == "s_electron" || category == "positron") 
-		  
-		  // NTUPLE_ACCEPT FILLING
-		  Int_t f = 0;
-		  particle_vars[f] = t -> ElecVertTarg(); f++;
-		  particle_vars[f] = t -> Q2(); f++;
-		  particle_vars[f] = t -> Nu(); f++;
-		  particle_vars[f] = t -> Xb(); f++;
-		  particle_vars[f] = t -> W(); f++;
-		  particle_vars[f] = t -> Sector(0); f++;
-		  particle_vars[f] = t -> ThetaPQ(i); f++;
-		  particle_vars[f] = t -> PhiPQ(i); f++;
-		  particle_vars[f] = t -> Zh(i); f++;
-		  particle_vars[f] = TMath::Sqrt(t -> Pt2(i)); f++;
-		  particle_vars[f] = t -> Mx2(i); f++;
-		  particle_vars[f] = t -> Xf(i); f++;
-		  particle_vars[f] = t -> T(i); f++;
-		  particle_vars[f] = t -> Momentum(i); f++;
-		  particle_vars[f] = t -> TimeCorr4(0.139570,i); f++;
-		  particle_vars[f] = (t -> Z(i)) - (t -> Z(0)); f++;
-		  particle_vars[f] = k; f++;	      
-		  particle_vars[f] = ((category == "gamma")?22:
-				      ((category == "pi-")?-211:
-				       (( category == "high energy pion +" || category == "low energy pion +")?211:
-					((category == "s_electron")?11:-11)
-					)
-				       )
-				      ); f++;
+		  // RECONSTRUCTED PARTICLES
+		  // set variables		  
+		  SetParticleVars(particle_vars,t,k,i,0,category);
 		  for ( Int_t w = 0; w < Nvar; ++w )
 		    {
 		      tree_variables[w][i] = particle_vars[w];
 		    }
-		  
-		  //ntuple_accept->Fill(particle_vars);
-		} // end: for (Int_t i = 1; i < nRows; i++)
+		}
 	      eventsize=nRows-1;
 	      if ( simul_key == 1 )
 		tree_accept.Fill();
 	      if ( simul_key == 0 )
 		tree_data.Fill();
 	    }
-	  
 	} // end:  if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")
       
       else // if(nRows>0 && (t->GetCategorization(0,tt)) != "electron")
@@ -338,13 +285,15 @@ int main(int argc, char **argv)
 		  for ( Int_t ll = 0; ll < Nvar; ll++ )
 		    particle_vars[ll] = 0;
 		  particle_vars[evntpos] = k;
-		  //particle_vars[Nvar] = k;
-		  //ntuple_accept->Fill(particle_vars);
 		}
 	    }
 	}
       
-      
+      if ( simul_key == 0 )
+	{
+	  input->Next();
+	  continue;
+	}
       
       //////////////////////////////
       //////////////////////////////
@@ -352,145 +301,59 @@ int main(int argc, char **argv)
       //////////////////////////////
       //////////////////////////////
 
-      if ( simul_key != 1 )
-	{
-	  input->Next();
-	  continue;
-	}
-      
-      
-      
       if( simul_key == 1 )//&& t -> Id(0,1)==3 /*&& t -> Q2(1) > 1. && t -> W(1) > 2. && t -> Nu(1) / 5.015 < 0.85*/ )
 	{
-	  // MARCH8
 	  if (t -> Id(0,1)==3 )
 	    {
-	      e_vars[0] = t -> Q2(1);
-	      e_vars[1] = t -> W(1);
-	      e_vars[2] = t -> Nu(1);
-	      e_vars[3] = 0;
-	      e_vars[4] = 0;
-	      e_vars[5] = 0;
-	      e_vars[6] = t -> X(0,1);
-	      e_vars[7] = t -> Y(0,1);
-	      e_vars[8] = t -> Z(0,1);
-	      e_vars[9] = t -> Px(0,1);
-	      e_vars[10] = t -> Py(0,1);
-	      e_vars[11] = t -> Pz(0,1);
-	      e_vars[12] = k;
-	      
+	      // THROWN ELECTRONS
+	      // set variables
+	      SetElectronVars(e_vars, t, k, 1);
+	      // fill ntuple
 	      e_thrown->Fill(e_vars);
-	      
+
+	      // THROWN PARTICLES (for simulations)
+	      if ( GSIMrows == 0 )
+		{
+		  eventsize=0;
+		  tree_thrown.Fill();
+		} 
 	      for( Int_t i=1; i < GSIMrows; i++ )
 		{
-		  //if ( k == 43 or k == 44 )
-		  //	cout << "k = " << k  << "\tQ2 = " << particle_vars[1] <<  endl;
-		  Int_t f = 0;
-		  particle_vars[f] = t -> ElecVertTarg(1); f++;
-		  particle_vars[f] = t -> Q2(1); f++;
-		  particle_vars[f] = t -> Nu(1); f++;
-		  particle_vars[f] = t -> Xb(1); f++;
-		  particle_vars[f] = t -> W(1); f++;
-		  particle_vars[f] = t -> Sector(0,1); f++;
-		  particle_vars[f] = t -> ThetaPQ(i,1); f++;
-		  particle_vars[f] = t -> PhiPQ(i,1); f++;
-		  particle_vars[f] = t -> Zh(i,1); f++;
-		  particle_vars[f] = TMath::Sqrt(t -> Pt2(i,1)); f++;
-		  particle_vars[f] = t -> Mx2(i,1); f++;
-		  particle_vars[f] = t -> Xf(i,1); f++;
-		  particle_vars[f] = t -> T(i,1); f++;
-		  particle_vars[f] = t -> Momentum(i,1); f++;
-		  particle_vars[f] = 0; f++;//t -> TimeCorr4(0.139570,i);
-		  particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
-		  particle_vars[f] = k; f++;
-		  particle_vars[f] = t -> Id(i,1); f++;
-		  
+		  // set variables
+		  SetParticleVars(particle_vars, t, k, i, 1, "");
 		  for ( Int_t w = 0; w < Nvar; ++w )
 		    {
 		      tree_variables[w][i] = particle_vars[w];
 		    }
-		  
 		}
 	      eventsize = GSIMrows-1;
 	      tree_thrown.Fill();
 	    }
 
-	  // MARCH8
+	  // FLAG -x
 	  else if ( t->Id(0,1) != 3 )
 	    {
-	      // for ( Int_t i = 0; i < 13; i++ )
-	      // 	{
-	      // 	  e_vars[i] = 0;
-	      // 	}
-	      // e_vars[12] = k;
-	      // e_thrown->Fill(e_vars);
-	      // eventsize=0;
-	      // tree_thrown.Fill();
-	      input->Next();
-	      
+	      input->Next(); 
 	      continue;
 	    }
-	  
-	  
-	  if ( nRows > GSIMrows )
-	    {
-	      for ( Int_t i = 0; i < to_fill; i++ )
-		{
-		  for ( Int_t ll = 0; ll < Nvar; ll++ )
-		    particle_vars[ll] = 0;
-		  particle_vars[evntpos] = k;
-		}
-	      if ( GSIMrows == 0 )
-		{
-		  cout << GSIMrows << " " << nRows << " " << to_fill << " BBBB " << simul_key << " AAAAAAAAAA " << endl;
-		  cout << " is this ever fulfilled? : " << k << endl;
-		  eventsize=0;
-		  tree_thrown.Fill();
-		}
-	    }
-	} // if( simul_key == 1 )
-      // else // THIS IS NEVER FULFILLED
-      // 	{
-      // 	  cout << "milagro en " << k << endl;
-      // 	  for ( Int_t i = 0; i < 13; i++ )
-      // 	    e_vars[i] = 0;
-      // 	  e_thrown->Fill(e_vars);
-      // 	  for ( Int_t i = 1; i < std::max(GSIMrows,nRows); i++ )
-      // 	    {
-      // 	      for ( Int_t ll = 0; ll < Nvar; ll++ )
-      // 		particle_vars[ll] = 0;
-      // 	      particle_vars[evntpos] = k;
-      // 	    } 
-      // 	}
+	}
 
-            
-      //cout<<std::right<<float(k+1)/nEntries*100<<"%\t" << "mem: " << totmem << "\r";
-      cout<<std::right<<float(k+1)/nEntries*100<<"%\r";
-      cout.flush();
       input->Next();
 
-     
-      if ( tree_accept.GetEntries() != tree_thrown.GetEntries() && band == false )
+      // DESYNC check 
+      if ( tree_accept.GetEntries() != tree_thrown.GetEntries() && desync == false )
 	{
 	  cout << "k = " << k << endl;
 	  cout << "t->Id(0,1) = " << t->Id(0,1) << endl;
 	  cout << "unsync starting " << k << endl;
 	  cout << "ac = " << tree_accept.GetEntries() << " th = " << tree_thrown.GetEntries()  << endl;
-	  band = true;
+	  desync = true;
 	  break;
 	}
 
-    } // for (Int_t k = 0; k < nEntries; k++)
+    }
+  // END of MAIN
 
-  // if ( simul_key == 0 )
-  //   {
-  //     ~TTree tree_thrown;
-  //     ~TTree tree_accept;
-  //   }
-  // if ( simul_key == 1 )
-  //   {
-  //     ~TTree tree_data;
-  //   }
   
   TTree version("version",VERSION);
   version.Write();
@@ -516,4 +379,105 @@ int main(int argc, char **argv)
   cout << "Done." << endl;
   bench.Show("bench");
   return 0;
+}
+
+
+void SetElectronVars(Float_t  * e_vars, TIdentificator * t, Int_t k, bool sim)
+{
+  TVector3 *vert;
+  if ( sim == 0 )
+    {
+      // variables reminder
+      //  0:1: 2:   3:   4:   5:  6:  7:  8:  9: 10: 11:   12
+      // Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
+      e_vars[0] = t -> Q2();
+      e_vars[1] = t -> W();
+      e_vars[2] = t -> Nu();
+      vert = t->GetCorrectedVert();
+      Float_t vxec=vert->X(); 
+      Float_t vyec=vert->Y(); 
+      Float_t vzec=vert->Z(); 
+      e_vars[3] = vxec; 
+      e_vars[4] = vyec; 
+      e_vars[5] = vzec;
+      e_vars[6] = t->X(0);
+      e_vars[7] = t->Y(0);
+      e_vars[8] = t->Z(0);
+      e_vars[9] = t -> Px(0);
+      e_vars[10] = t -> Py(0);
+      e_vars[11] = t -> Pz(0);
+      e_vars[12] = k;
+    }
+  else if ( sim == 1 )
+    {
+      e_vars[0] = t -> Q2(1);
+      e_vars[1] = t -> W(1);
+      e_vars[2] = t -> Nu(1);
+      e_vars[3] = 0;
+      e_vars[4] = 0;
+      e_vars[5] = 0;
+      e_vars[6] = t -> X(0,1);
+      e_vars[7] = t -> Y(0,1);
+      e_vars[8] = t -> Z(0,1);
+      e_vars[9] = t -> Px(0,1);
+      e_vars[10] = t -> Py(0,1);
+      e_vars[11] = t -> Pz(0,1);
+      e_vars[12] = k;
+    }
+}
+
+
+void SetParticleVars(Float_t * particle_vars, TIdentificator * t, Int_t k, Int_t i, bool sim, TString category)
+{
+  Int_t f = 0;
+  if ( sim == 0 )
+    {
+      particle_vars[f] = t -> ElecVertTarg(); f++;
+      particle_vars[f] = t -> Q2(); f++;
+      particle_vars[f] = t -> Nu(); f++;
+      particle_vars[f] = t -> Xb(); f++;
+      particle_vars[f] = t -> W(); f++;
+      particle_vars[f] = t -> Sector(0); f++;
+      particle_vars[f] = t -> ThetaPQ(i); f++;
+      particle_vars[f] = t -> PhiPQ(i); f++;
+      particle_vars[f] = t -> Zh(i); f++;
+      particle_vars[f] = TMath::Sqrt(t -> Pt2(i)); f++;
+      particle_vars[f] = t -> Mx2(i); f++;
+      particle_vars[f] = t -> Xf(i); f++;
+      particle_vars[f] = t -> T(i); f++;
+      particle_vars[f] = t -> Momentum(i); f++;
+      particle_vars[f] = t -> TimeCorr4(0.139570,i); f++;
+      particle_vars[f] = (t -> Z(i)) - (t -> Z(0)); f++;
+      particle_vars[f] = k; f++;	      
+      particle_vars[f] = ((category == "gamma")?22:
+			  ((category == "pi-")?-211:
+			   (( category == "high energy pion +" || category == "low energy pion +")?211:
+			    ((category == "s_electron")?11:-11)
+			    )
+			   )
+			  ); f++;
+    }
+
+  else if ( sim == 1 )
+    {
+      Int_t f = 0;
+      particle_vars[f] = t -> ElecVertTarg(1); f++;
+      particle_vars[f] = t -> Q2(1); f++;
+      particle_vars[f] = t -> Nu(1); f++;
+      particle_vars[f] = t -> Xb(1); f++;
+      particle_vars[f] = t -> W(1); f++;
+      particle_vars[f] = t -> Sector(0,1); f++;
+      particle_vars[f] = t -> ThetaPQ(i,1); f++;
+      particle_vars[f] = t -> PhiPQ(i,1); f++;
+      particle_vars[f] = t -> Zh(i,1); f++;
+      particle_vars[f] = TMath::Sqrt(t -> Pt2(i,1)); f++;
+      particle_vars[f] = t -> Mx2(i,1); f++;
+      particle_vars[f] = t -> Xf(i,1); f++;
+      particle_vars[f] = t -> T(i,1); f++;
+      particle_vars[f] = t -> Momentum(i,1); f++;
+      particle_vars[f] = 0; f++;//t -> TimeCorr4(0.139570,i);
+      particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
+      particle_vars[f] = k; f++;
+      particle_vars[f] = t -> Id(i,1); f++;
+    }
 }
