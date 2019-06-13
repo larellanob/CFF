@@ -16,7 +16,7 @@ void SetElectronVars(Float_t  * e_vars, TIdentificator * t, Int_t k, bool sim);
 int main(int argc, char **argv)
 {
   TBenchmark bench;
-  bool verbose = false;
+  bool verbose = true;
 
   bench.Start("bench");
   
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
   
   //const char* NtupleName;
   
-  TString     VarList = "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:evnt:pid";
+  TString     VarList = "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:evnt:pid:ThetaLab:PhiLab:Px:Py:Pz";
   Int_t Nvar = VarList.CountChar(':')+1;
   Float_t *particle_vars = new Float_t[Nvar];
   Int_t evntpos = 16;
@@ -167,16 +167,35 @@ int main(int argc, char **argv)
 	}
       const char * tt = "C";
       
+      //////////////////////////
+      // FIRST PARTICLE ELECTRON
+      //////////////////////////
+
+      if ( simul_key == 1 )
+	{
+	  if ( t->GetCategorization(0,tt) != "electron" && t->Id(0,1) != 3 )
+	    {
+	      input->Next();
+	      continue;
+	    }
+	}
+      else if ( simul_key == 0 )
+	{
+	  if ( t->GetCategorization(0,tt) != "electron" )
+	    {
+	      input->Next();
+	      continue;
+	    }
+	}
+
       ////////////////////////
       // PION+ FILTER
       bool PionEvent = false;
       for ( Int_t i = 1; i < nRows; i++ )
 	{
+	  if ( t->GetCategorization(0,tt) != "electron" )
+	    break;
 	  TString categ = t->GetCategorization(i,tt);
-	  if ( t->GetCategorization(0,tt) != "electron" )  // electron == trigger
-	    {
-	      break;
-	    }
 	  if ( categ == "high energy pion +" || categ == "low energy pion +" )
 	    {
 	      PionEvent = true;
@@ -189,6 +208,8 @@ int main(int argc, char **argv)
 	  GSIMrows = input->GetNRows("GSIM");
 	  for ( Int_t i = 1; i < GSIMrows; i++ )
 	    {
+	      if ( t->Id(0,1) != 3 )
+		break;
 	      if ( t->Id(i,1) == 8)
 		{
 		  PionEvent = true;
@@ -265,7 +286,7 @@ int main(int argc, char **argv)
 	    tree_data.Fill();
 	}
 
-      // also throwning away if forst particle not electron
+      // also throwing away if first particle not electron
       else if ( nRows > 1 && (t->GetCategorization(0,tt)) != "electron" )
 	{
 	  for ( Int_t l = 0; l < 13; l++ )
@@ -334,6 +355,7 @@ int main(int argc, char **argv)
       if ( tree_accept.GetEntries() != tree_thrown.GetEntries() && desync == false )
 	{
 	  cout << "k = " << k << endl;
+	  cout << "t->GetCat = " << t->GetCategorization(0,tt) << endl;
 	  cout << "t->Id(0,1) = " << t->Id(0,1) << endl;
 	  cout << "unsync starting " << k << endl;
 	  cout << "ac = " << tree_accept.GetEntries() << " th = " << tree_thrown.GetEntries()  << endl;
@@ -446,6 +468,11 @@ void SetParticleVars(Float_t * particle_vars, TIdentificator * t, Int_t k, Int_t
 			    )
 			   )
 			  ); f++;
+      particle_vars[f] = t -> ThetaLab(i); f++;
+      particle_vars[f] = t -> PhiLab(i); f++;
+      particle_vars[f] = t -> Px(i); f++;
+      particle_vars[f] = t -> Py(i); f++;
+      particle_vars[f] = t -> Pz(i); f++;
     }
 
   else if ( sim == 1 )
@@ -469,5 +496,10 @@ void SetParticleVars(Float_t * particle_vars, TIdentificator * t, Int_t k, Int_t
       particle_vars[f] = (t -> Z(i,1)) - (t -> Z(0,1)); f++;
       particle_vars[f] = k; f++;
       particle_vars[f] = t -> Id(i,1); f++;
+      particle_vars[f] = t -> ThetaLab(i,1); f++;
+      particle_vars[f] = t -> PhiLab(i,1); f++;
+      particle_vars[f] = t -> Px(i,1); f++;
+      particle_vars[f] = t -> Py(i,1); f++;
+      particle_vars[f] = t -> Pz(i,1); f++;
     }
 }
