@@ -170,23 +170,20 @@ int main(int argc, char **argv)
       //////////////////////////
       // FIRST PARTICLE ELECTRON
       //////////////////////////
+      
 
-      if ( simul_key == 1 )
+      if ( t->GetCategorization(0,tt) != "electron" )
 	{
-	  if ( t->GetCategorization(0,tt) != "electron" && t->Id(0,1) != 3 )
-	    {
-	      input->Next();
-	      continue;
-	    }
+	  input->Next();
+	  continue;
 	}
-      else if ( simul_key == 0 )
+      
+      if ( simul_key == 1 && t->Id(0,1) != 3 ) 
 	{
-	  if ( t->GetCategorization(0,tt) != "electron" )
-	    {
-	      input->Next();
-	      continue;
-	    }
+	  input->Next();
+	  continue;
 	}
+
 
       ////////////////////////
       // PION+ FILTER
