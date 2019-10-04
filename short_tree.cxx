@@ -307,6 +307,18 @@ int main(int argc, char **argv)
 	Px.emplace_back(t->Px(i));
 	Py.emplace_back(t->Py(i));
 	Pz.emplace_back(t->Pz(i));
+	if ( category == "pi-" ) {
+	  pid.emplace_back(-211);
+	} else if ( category == "high energy pion +" 
+		    || category == "low energy pion +"
+		    ) { 
+	  pid.emplace_back(211);
+	} else {
+	  continue;
+	}
+
+
+	/*
 	if ( category == "gamma" ) {
 	  pid.emplace_back(22);
 	} else if ( category == "pi-" ) {
@@ -320,6 +332,7 @@ int main(int argc, char **argv)
 	} else {
 	  pid.emplace_back(0);
 	}
+	*/
 	evnt = k;
 	ThetaPQ.emplace_back(t->ThetaPQ(i));
 	PhiPQ.emplace_back(t->PhiPQ(i));
@@ -384,7 +397,11 @@ int main(int argc, char **argv)
 	  Px.emplace_back(t->Px(i,1));
 	  Py.emplace_back(t->Py(i,1));
 	  Pz.emplace_back(t->Pz(i,1));
-	  pid.emplace_back(t->Id(i,1));
+	  if ( t->Id(i,1) == 8 || t->Id(i,1) == 9 ) {
+	    pid.emplace_back(t->Id(i,1));
+	  } else {
+	    continue;
+	  }
 	  evnt = k;
 	  ThetaPQ.emplace_back(t->ThetaPQ(i,1));
 	  PhiPQ.emplace_back(t->PhiPQ(i,1));
