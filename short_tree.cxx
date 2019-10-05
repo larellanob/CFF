@@ -199,7 +199,7 @@ int main(int argc, char **argv)
     Double_t totmem = (Double_t) (procinfo.fMemResident);
     
     Int_t nRows = input->GetNRows("EVNT");
-
+    
     Clear_variables(Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
       
     if ( simul_key == 1 ) {
@@ -240,8 +240,6 @@ int main(int argc, char **argv)
     if ( simul_key == 1 ) {
       GSIMrows = input->GetNRows("GSIM");
       for ( Int_t i = 1; i < GSIMrows; i++ ) {
-	if ( t->Id(0,1) != 3 )
-	  break;
 	if ( t->Id(i,1) == 8) {
 	  PionEvent = true;
 	  break;
