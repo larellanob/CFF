@@ -227,12 +227,24 @@ int main(int argc, char **argv)
     ////////////////////////
     // PION+ FILTER
     bool PionEvent = false;
+    bool PionMinusEvent = false;
+    bool ParticleSelection = false;
     for ( Int_t i = 1; i < nRows; i++ ) {
       if ( t->GetCategorization(0,tt) != "electron" )
 	break;
       TString categ = t->GetCategorization(i,tt);
-      if ( categ == "high energy pion +" || categ == "low energy pion +" ) {
+      if ( categ == "high energy pion +"
+	   || categ == "low energy pion +"
+	   ) {
 	PionEvent = true;
+      }
+      if ( categ == "pi-" ) {
+	PionMinusEvent = true;
+      }
+      if ( PionEvent
+	   && PionMinusEvent
+	   ) {
+	ParticleSelection = true;
 	break;
       }
     }
@@ -242,12 +254,20 @@ int main(int argc, char **argv)
       for ( Int_t i = 1; i < GSIMrows; i++ ) {
 	if ( t->Id(i,1) == 8) {
 	  PionEvent = true;
+	}
+	if ( t->Id(i,1) == 9 ) {
+	  PionMinusEvent = true;
+	}
+	if ( PionEvent
+	     && PionMinusEvent
+	     ) {
+	  ParticleSelection = true;
 	  break;
 	}
       }
     }
     
-    if ( PionEvent == false ) {
+    if ( ParticleSelection == false ) {
       if ( verbose == true ) {
 	cout << std::right <<  std::setw(12) << float(k+1)/nEntries*100.0 << "% mem: " << totmem << "\r";
 	cout.flush();
@@ -297,14 +317,6 @@ int main(int argc, char **argv)
 	TString category = t->GetCategorization(i,tt);
 	// set variables		  
 	//SetParticleVars(particle_vars,t,k,i,0,category);
-	Q2 = t->Q2();
-	Nu = t->Nu();
-	Xb = t->Xb();
-	W  = t->W() ;
-	Zh.emplace_back(t->Zh(i));
-	Px.emplace_back(t->Px(i));
-	Py.emplace_back(t->Py(i));
-	Pz.emplace_back(t->Pz(i));
 	if ( category == "pi-" ) {
 	  pid.emplace_back(-211);
 	} else if ( category == "high energy pion +" 
@@ -314,8 +326,6 @@ int main(int argc, char **argv)
 	} else {
 	  continue;
 	}
-
-
 	/*
 	if ( category == "gamma" ) {
 	  pid.emplace_back(22);
@@ -331,6 +341,15 @@ int main(int argc, char **argv)
 	  pid.emplace_back(0);
 	}
 	*/
+
+	Q2 = t->Q2();
+	Nu = t->Nu();
+	Xb = t->Xb();
+	W  = t->W() ;
+	Zh.emplace_back(t->Zh(i));
+	Px.emplace_back(t->Px(i));
+	Py.emplace_back(t->Py(i));
+	Pz.emplace_back(t->Pz(i));
 	evnt = k;
 	ThetaPQ.emplace_back(t->ThetaPQ(i));
 	PhiPQ.emplace_back(t->PhiPQ(i));
@@ -387,6 +406,11 @@ int main(int argc, char **argv)
 	}
 	*/
 	for( Int_t i=1; i < GSIMrows; i++ ) {
+	  if ( t->Id(i,1) == 8 || t->Id(i,1) == 9 ) {
+	    pid.emplace_back(t->Id(i,1));
+	  } else {
+	    continue;
+	  }
 	  Q2 = t->Q2(1);
 	  Nu = t->Nu(1);
 	  Xb = t->Xb(1);
@@ -395,11 +419,6 @@ int main(int argc, char **argv)
 	  Px.emplace_back(t->Px(i,1));
 	  Py.emplace_back(t->Py(i,1));
 	  Pz.emplace_back(t->Pz(i,1));
-	  if ( t->Id(i,1) == 8 || t->Id(i,1) == 9 ) {
-	    pid.emplace_back(t->Id(i,1));
-	  } else {
-	    continue;
-	  }
 	  evnt = k;
 	  ThetaPQ.emplace_back(t->ThetaPQ(i,1));
 	  PhiPQ.emplace_back(t->PhiPQ(i,1));
