@@ -193,6 +193,7 @@ int main(int argc, char **argv)
   bool desync = false;
   Int_t GSIMrows = 0;
   ProcInfo_t procinfo;
+  Int_t EventCounter = 0;
   for (Int_t k = 0; k < nEntries; k++) {
 
     gSystem->GetProcInfo(&procinfo);
@@ -268,7 +269,7 @@ int main(int argc, char **argv)
     }
     
     if ( ParticleSelection == false ) {
-      if ( verbose == true ) {
+      if ( verbose == true && EventCounter%1000 == 0 ) {
 	cout << std::right <<  std::setw(12) << float(k+1)/nEntries*100.0 << "% mem: " << totmem << "\r";
 	cout.flush();
       }
@@ -311,7 +312,7 @@ int main(int argc, char **argv)
       SetElectronVars(e_vars, t, k, 0);
       // fill ntuple
       e_recons->Fill(e_vars);
-
+      EventCounter++;
       // RECONSTRUCTED PARTICLES
       for (Int_t i = 1; i < nRows; i++) {
 	TString category = t->GetCategorization(i,tt);
