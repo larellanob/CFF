@@ -16,7 +16,6 @@ file. Particle identification is made by Analyser.
 
 Compile with make when necessary
 
-
 ### Environment variables
 * Add Analyser and ClasTool "include" folders to ROOT_INCLUDE_PATH
 * Add ClasTool/slib/$OS_NAME and Analyser/slib to LD_LIBRARY_PATH
