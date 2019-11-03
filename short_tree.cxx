@@ -209,7 +209,7 @@ int main(int argc, char **argv)
 	continue;
       }
     }
-    const char * tt = "Pb";
+    const char * tt = "C";
     
     //////////////////////////
     // FIRST PARTICLE ELECTRON
