@@ -86,7 +86,7 @@ Compile with make when necessary
     will just be overwritten.
 
 
-### TO DO
+## TO DO
 
 * Take target selection as command line input rather than it being hardcoded in short_tree.cxx
 
