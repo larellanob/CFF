@@ -21,7 +21,8 @@ TString gVarList_selectron =
 void SetParticleVars(Float_t * particle_vars, TIdentificator * t, Int_t k, Int_t i, bool sim, TString category);
 void SetElectronVars(Float_t  * e_vars, TIdentificator * t, Int_t k, bool sim);
 
-void Clear_variables(Float_t & Q2,
+void Clear_variables(Int_t & TargType,
+		     Float_t & Q2,
 		     Float_t & Nu,
 		     Float_t & Xb,
 		     Float_t & W,
@@ -37,6 +38,7 @@ void Clear_variables(Float_t & Q2,
 		     std::vector<Float_t> & Phi
 		     )
 {
+  TargType = -1;
   Q2 = 0;
   Nu = 0;
   Xb = 0;
@@ -69,7 +71,8 @@ int main(int argc, char **argv)
   TClasTool *input = new TClasTool();
   input->InitDSTReader("ROOTDSTR");
 
-  if(argc == 1) {    
+  if(argc == 2) {
+    cout << "one arguments: target" << endl;
     char File[200];
     ifstream in("dataFiles.txt", ios::in);
     if (!in) {
@@ -112,17 +115,19 @@ int main(int argc, char **argv)
   std::string out_filename_tree = "local/CFFTree_";
   
   // DATA
-  std::string target_name = "data";
-  // SIMULATION
-  if ( simul_key == 1 ) {
-    target_name = string(argv[1]);
+  std::string target_name = string(argv[1]);
+  std::string data_simulation = target_name;
+  if ( !simul_key ){
+    data_simulation = data_simulation+"_data";
+  } else {
+    data_simulation = data_simulation+"_simul";
   }
-  
+    
   // General
-  out_filename_tree.append(target_name);
+  out_filename_tree.append(data_simulation);
   std::string out_extension = ".root";
   out_filename_tree.append(out_extension);
-  TFile out_tree(out_filename_tree.c_str(), "RECREATE", target_name.c_str());
+  TFile out_tree(out_filename_tree.c_str(), "RECREATE", data_simulation.c_str());
 
   /////// TTREE
   // Data
@@ -134,6 +139,7 @@ int main(int argc, char **argv)
   // VECTORS REWRITE
   // "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:evnt:pid:ThetaLab:PhiLab:Px:Py:Pz";
   // "Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:evnt";
+  Int_t TargType;
   Float_t Q2;
   Float_t Nu;
   Float_t Xb;
@@ -155,7 +161,8 @@ int main(int argc, char **argv)
   trees.push_back(&tree_thrown);
   trees.push_back(&tree_accept);
 
-  for ( auto tree: trees ) { 
+  for ( auto tree: trees ) {
+    tree->Branch("TargType",&TargType);
     tree->Branch("Q2",&Q2);
     tree->Branch("Nu",&Nu);
     tree->Branch("Xb",&Xb);
@@ -201,7 +208,7 @@ int main(int argc, char **argv)
     
     Int_t nRows = input->GetNRows("EVNT");
     
-    Clear_variables(Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
+    Clear_variables(TargType,Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
       
     if ( simul_key == 1 ) {
       GSIMrows = input->GetNRows("GSIM");
@@ -209,7 +216,8 @@ int main(int argc, char **argv)
 	continue;
       }
     }
-    const char * tt = "C";
+    //const char * tt = "C";
+    const char * tt = target_name.c_str();
     
     //////////////////////////
     // FIRST PARTICLE ELECTRON
@@ -223,16 +231,27 @@ int main(int argc, char **argv)
       input->Next();
       continue;
     }
-    
+
+    ////////////////////////
+    // TargType 1 or 2
+    ////////////////////////
+    if ( t->ElecVertTarg() != 1 &&  t->ElecVertTarg() != 2 ) {
+      input->Next();
+      continue;
+    }
+
+    if ( simul_key == 1 && t->ElecVertTarg(1) != 1 &&  t->ElecVertTarg(1) != 2 ) {
+      input->Next();
+      continue;
+    }
     
     ////////////////////////
     // PION+ FILTER
-    bool PionEvent = false;
+    bool PionEvent      = false;
     bool PionMinusEvent = false;
+    bool PhotonEvent    = false;
     bool ParticleSelection = false;
     for ( Int_t i = 1; i < nRows; i++ ) {
-      if ( t->GetCategorization(0,tt) != "electron" )
-	break;
       TString categ = t->GetCategorization(i,tt);
       if ( categ == "high energy pion +"
 	   || categ == "low energy pion +"
@@ -242,8 +261,14 @@ int main(int argc, char **argv)
       if ( categ == "pi-" ) {
 	PionMinusEvent = true;
       }
+      if ( categ == "photon"
+	   || categ == "gamma"
+	   ) {
+	PhotonEvent = true;
+      }
       if ( PionEvent
-	   && PionMinusEvent
+	   || PionMinusEvent
+	   || PhotonEvent
 	   ) {
 	ParticleSelection = true;
 	break;
@@ -259,8 +284,12 @@ int main(int argc, char **argv)
 	if ( t->Id(i,1) == 9 ) {
 	  PionMinusEvent = true;
 	}
+	if ( t->Id(i,1) == 1 ) {
+	  PhotonEvent = true;
+	}
 	if ( PionEvent
-	     && PionMinusEvent
+	     || PionMinusEvent
+	     || PhotonEvent
 	     ) {
 	  ParticleSelection = true;
 	  break;
@@ -269,7 +298,7 @@ int main(int argc, char **argv)
     }
     
     if ( ParticleSelection == false ) {
-      if ( verbose == true && EventCounter%1000 == 0 ) {
+      if ( verbose == true && EventCounter%100 == 0 ) {
 	cout << std::right <<  std::setw(12) << float(k+1)/nEntries*100.0 << "% mem: " << totmem << "\r";
 	cout.flush();
       }
@@ -324,6 +353,10 @@ int main(int argc, char **argv)
 		    || category == "low energy pion +"
 		    ) { 
 	  pid.emplace_back(211);
+	} else if ( category == "photon" ) {
+	  pid.emplace_back(21);
+	} else if ( category == "gamma" ) {
+	  pid.emplace_back(22);
 	} else {
 	  continue;
 	}
@@ -342,7 +375,7 @@ int main(int argc, char **argv)
 	  pid.emplace_back(0);
 	}
 	*/
-
+	TargType = t->ElecVertTarg();
 	Q2 = t->Q2();
 	Nu = t->Nu();
 	Xb = t->Xb();
@@ -386,7 +419,7 @@ int main(int argc, char **argv)
     //////////////////////////////
 
 
-    Clear_variables(Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
+    Clear_variables(TargType,Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
 
     // very old comment:
     //&& t -> Id(0,1)==3 /*&& t -> Q2(1) > 1. && t -> W(1) > 2. && t -> Nu(1) / 5.015 < 0.85*/ )
@@ -407,11 +440,12 @@ int main(int argc, char **argv)
 	}
 	*/
 	for( Int_t i=1; i < GSIMrows; i++ ) {
-	  if ( t->Id(i,1) == 8 || t->Id(i,1) == 9 ) {
+	  if ( t->Id(i,1) == 8 || t->Id(i,1) == 9 || t->Id(i,1) == 1 ) {
 	    pid.emplace_back(t->Id(i,1));
 	  } else {
 	    continue;
 	  }
+	  TargType = t->ElecVertTarg(1);
 	  Q2 = t->Q2(1);
 	  Nu = t->Nu(1);
 	  Xb = t->Xb(1);
