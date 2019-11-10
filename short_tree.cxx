@@ -26,7 +26,14 @@ void Clear_variables(Int_t & TargType,
 		     Float_t & Nu,
 		     Float_t & Xb,
 		     Float_t & W,
+		     Int_t & SectorEl,
 		     std::vector<Float_t> & Zh,
+		     std::vector<Float_t> & Pt,
+		     std::vector<Float_t> & W2p,
+		     std::vector<Float_t> & Xf,
+		     std::vector<Float_t> & T,
+		     std::vector<Float_t> & P,
+		     std::vector<Float_t> & deltaZ,
 		     std::vector<Float_t> & Px,
 		     std::vector<Float_t> & Py,
 		     std::vector<Float_t> & Pz,
@@ -44,7 +51,14 @@ void Clear_variables(Int_t & TargType,
   Xb = 0;
   W  = 0;
   evnt= 0;
+  SectorEl = -1;
   Zh.clear();
+  Pt.clear();
+  W2p.clear();
+  Xf.clear();
+  T.clear();
+  P.clear();
+  deltaZ.clear();
   Px.clear();
   Py.clear();
   Pz.clear();
@@ -144,7 +158,14 @@ int main(int argc, char **argv)
   Float_t Nu;
   Float_t Xb;
   Float_t W;
+  Int_t SectorEl;
   std::vector<Float_t> Zh;
+  std::vector<Float_t> Pt;
+  std::vector<Float_t> W2p;
+  std::vector<Float_t> Xf;
+  std::vector<Float_t> T;
+  std::vector<Float_t> P;
+  std::vector<Float_t> deltaZ;
   std::vector<Float_t> Px;
   std::vector<Float_t> Py;
   std::vector<Float_t> Pz;
@@ -167,7 +188,14 @@ int main(int argc, char **argv)
     tree->Branch("Nu",&Nu);
     tree->Branch("Xb",&Xb);
     tree->Branch("W",&W);
+    tree->Branch("SectorEl",&SectorEl);
     tree->Branch("Zh",&Zh);
+    tree->Branch("Pt",&Pt);
+    tree->Branch("W2p",&W2p);
+    tree->Branch("Xf",&Xf);
+    tree->Branch("T",&T);
+    tree->Branch("P",&P);
+    tree->Branch("deltaZ",&deltaZ);
     tree->Branch("Px",&Px);
     tree->Branch("Py",&Py);
     tree->Branch("Pz",&Pz);
@@ -208,7 +236,7 @@ int main(int argc, char **argv)
     
     Int_t nRows = input->GetNRows("EVNT");
     
-    Clear_variables(TargType,Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
+    Clear_variables(TargType,Q2,Nu, Xb, W, SectorEl, Zh, Pt, W2p, Xf, T, P, deltaZ, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
       
     if ( simul_key == 1 ) {
       GSIMrows = input->GetNRows("GSIM");
@@ -378,7 +406,14 @@ int main(int argc, char **argv)
 	Nu = t->Nu();
 	Xb = t->Xb();
 	W  = t->W() ;
+	SectorEl = t->Sector(0);
 	Zh.emplace_back(t->Zh(i));
+	Pt.emplace_back(TMath::Sqrt(t->Pt2(i)));
+	W2p.emplace_back(t->Mx2(i));
+	Xf.emplace_back(t->Xf(i));
+	T.emplace_back(t->T(i));
+	P.emplace_back(t->Momentum(i));
+	deltaZ.emplace_back( (t->Z(i)) - (t->Z(0)) );
 	Px.emplace_back(t->Px(i));
 	Py.emplace_back(t->Py(i));
 	Pz.emplace_back(t->Pz(i));
@@ -417,7 +452,7 @@ int main(int argc, char **argv)
     //////////////////////////////
 
 
-    Clear_variables(TargType,Q2,Nu, Xb, W, Zh, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
+    Clear_variables(TargType,Q2,Nu, Xb, W, SectorEl, Zh, Pt, W2p, Xf, T, P, deltaZ, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
 
     // very old comment:
     //&& t -> Id(0,1)==3 /*&& t -> Q2(1) > 1. && t -> W(1) > 2. && t -> Nu(1) / 5.015 < 0.85*/ )
@@ -448,7 +483,14 @@ int main(int argc, char **argv)
 	  Nu = t->Nu(1);
 	  Xb = t->Xb(1);
 	  W  = t->W(1) ;
+	  SectorEl = t->Sector(0,1);
 	  Zh.emplace_back(t->Zh(i,1));
+	  Pt.emplace_back( TMath::Sqrt(t->Pt2(i,1)) );
+	  W2p.emplace_back(t->Mx2(i,1));
+	  Xf.emplace_back(t->Xf(i,1));
+	  T.emplace_back(t->T(i,1));
+	  P.emplace_back(t->Momentum(i,1));
+	  deltaZ.emplace_back( (t->Z(i,1)) - (t->Z(0,1)) );
 	  Px.emplace_back(t->Px(i,1));
 	  Py.emplace_back(t->Py(i,1));
 	  Pz.emplace_back(t->Pz(i,1));
