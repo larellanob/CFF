@@ -268,7 +268,6 @@ int main(int argc, char **argv)
       }
       if ( PionEvent
 	   || PionMinusEvent
-	   || PhotonEvent
 	   ) {
 	ParticleSelection = true;
 	break;
@@ -289,7 +288,6 @@ int main(int argc, char **argv)
 	}
 	if ( PionEvent
 	     || PionMinusEvent
-	     || PhotonEvent
 	     ) {
 	  ParticleSelection = true;
 	  break;
