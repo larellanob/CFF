@@ -386,21 +386,6 @@ int main(int argc, char **argv)
 	} else {
 	  continue;
 	}
-	/*
-	if ( category == "gamma" ) {
-	  pid.emplace_back(22);
-	} else if ( category == "pi-" ) {
-	  pid.emplace_back(-211);
-	} else if ( category == "high energy pion +"
-		    || category == "low energy pion +"
-		    ) {
-	  pid.emplace_back(211);
-	} else if ( category == "s_electron" ) {
-	  pid.emplace_back(11);
-	} else {
-	  pid.emplace_back(0);
-	}
-	*/
 	TargType = t->ElecVertTarg();
 	Q2 = t->Q2();
 	Nu = t->Nu();
@@ -473,8 +458,12 @@ int main(int argc, char **argv)
 	}
 	*/
 	for( Int_t i=1; i < GSIMrows; i++ ) {
-	  if ( t->Id(i,1) == 8 || t->Id(i,1) == 9 || t->Id(i,1) == 1 ) {
-	    pid.emplace_back(t->Id(i,1));
+	  if ( t->Id(i,1) == 8 ) {
+	    pid.emplace_back(211);
+	  } else if ( t->Id(i,1) == 9 ) {
+	    pid.emplace_back(-211);
+	  } else if ( t->Id(i,1) == 1 ) {	    
+	    pid.emplace_back(22);
 	  } else {
 	    continue;
 	  }
