@@ -241,6 +241,7 @@ int main(int argc, char **argv)
     if ( simul_key == 1 ) {
       GSIMrows = input->GetNRows("GSIM");
       if ( GSIMrows == 0 ){
+	input->Next();
 	continue;
       }
     }
@@ -255,7 +256,7 @@ int main(int argc, char **argv)
       continue;
     }
     
-    if ( simul_key == 1 && t->Id(0,1) != 3 ) {
+    if ( simul_key  && t->Id(0,1) != 3 ) {
       input->Next();
       continue;
     }
@@ -268,7 +269,7 @@ int main(int argc, char **argv)
       continue;
     }
 
-    if ( simul_key == 1 && t->ElecVertTarg(1) != 1 &&  t->ElecVertTarg(1) != 2 ) {
+    if ( simul_key && t->ElecVertTarg(1) != 1 &&  t->ElecVertTarg(1) != 2 ) {
       input->Next();
       continue;
     }
@@ -416,6 +417,7 @@ int main(int argc, char **argv)
 
     } else if ( nRows > 1 && (t->GetCategorization(0,tt)) != "electron" ) {
       // also throwing away if first particle not electron
+      input->Next();
       continue;
       /*
       for ( Int_t l = 0; l < 13; l++ )
