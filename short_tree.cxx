@@ -343,12 +343,6 @@ int main(int argc, char **argv)
     
     if ( nRows == 0 || nRows == 1 ) {
       //eventsize=0;
-      if ( simul_key == 1 ) {
-	tree_accept.Fill();
-      }
-      if ( simul_key == 0 ) {
-	tree_data.Fill();
-      }
       for ( Int_t l = 0; l < 13; l++ ) {
 	e_vars[l] = 0;
       }
@@ -378,10 +372,12 @@ int main(int argc, char **argv)
       
       e_recons->Fill(e_vars);
 
-      if ( simul_key == 1 )
-	tree_accept.Fill();
-      if ( simul_key == 0 )
-	tree_data.Fill();
+      if (t -> Id(0,1)==3 ) {
+	if ( simul_key == 1 )
+	  tree_accept.Fill();
+	if ( simul_key == 0 )
+	  tree_data.Fill();
+      }
     }
     
     if( nRows > 1 && (t->GetCategorization(0,tt)) == "electron" ) {
