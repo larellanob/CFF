@@ -12,7 +12,7 @@
 
 // Variables used
 
-bool g_Debug = false;
+bool g_Debug = true;
 TString gVarList_particles =
   "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:evnt:pid:ThetaLab:PhiLab:Px:Py:Pz";
 TString gVarList_selectron =
@@ -343,8 +343,16 @@ int main(int argc, char **argv)
     // R E C O N S T R U C T E D //
     ///////////////////////////////
     ///////////////////////////////
-    
+    if ( g_Debug ) {
+      std::cout << "evnt, nrows " << k << " " << nRows << std::endl;
+    }
+    if ( k > 55 ) 
+      break;
     if ( nRows == 0 ) {
+      if ( simul_key == 1 && t->Id(0,1)!=3 ) {
+	input->Next();
+	continue;
+      }
       std::cout << "does this ever happen?" << std::endl;
       for ( Int_t l = 0; l < 13; l++ ) {
 	e_vars[l] = 0;
@@ -365,8 +373,21 @@ int main(int argc, char **argv)
     }
   
     if ( nRows == 1 ) {
-      if ( t->Id(0,1)==3 )
+      if ( simul_key == 1 && t->Id(0,1)!=3 ) {
+	input->Next();
+	continue;
+      }
+      if ( g_Debug ) {
+	std::cout << "debug: 1 row accept particles" << std::endl;
+      }
+      if ( t->GetCategorization(0,tt) == "electron" ) {
 	e_recons->Fill(e_vars);
+      } else {
+	for ( Int_t l = 0; l < 13; l++ ) {
+	  e_vars[l] = 0;
+	}
+	e_recons->Fill(e_vars);
+      }
       
       Clear_variables(TargType,Q2,Nu, Xb, W,
 		      SectorEl, Zh, Pt, W2p,
@@ -384,7 +405,7 @@ int main(int argc, char **argv)
 	}
 	tree_accept.Fill();
       }
-      tree_accept.Fill();
+      
       if ( simul_key == 0 ) {
 	tree_data.Fill();
       }
@@ -395,6 +416,7 @@ int main(int argc, char **argv)
     if( nRows > 1 && (t->GetCategorization(0,tt)) == "electron" ) {
       
       // flag -x
+      std::cout << "this is happening" << std::endl;
       if ( simul_key == 1 && t->Id(0,1)!=3 ) {
 	input->Next();
 	continue;
@@ -474,8 +496,9 @@ int main(int argc, char **argv)
     //////// T H R O W N /////////
     //////////////////////////////
     //////////////////////////////
-
-
+    if ( g_Debug ) {
+      std::cout << "debug: Entering thrown phase" << std::endl;
+    }
     Clear_variables(TargType,Q2,Nu, Xb, W, SectorEl, Zh, Pt, W2p, Xf, T, P, deltaZ, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
 
     // very old comment:
@@ -483,7 +506,9 @@ int main(int argc, char **argv)
     if( simul_key == 1 ) { 
       
       if (t -> Id(0,1)==3 ) {
-
+	if ( g_Debug ) {
+	  std::cout << "debug: thrown set electron variables" << std::endl;
+	}
 	// THROWN ELECTRONS
 	// set variables
 	SetElectronVars(e_vars, t, k, 1);
