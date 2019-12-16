@@ -50,7 +50,7 @@ void Clear_variables(Int_t & TargType,
   Nu = 0;
   Xb = 0;
   W  = 0;
-  evnt= 0;
+  //evnt= ;
   SectorEl = -1;
   Zh.clear();
   Pt.clear();
@@ -343,39 +343,35 @@ int main(int argc, char **argv)
     // R E C O N S T R U C T E D //
     ///////////////////////////////
     ///////////////////////////////
-    if ( g_Debug ) {
-      std::cout << "evnt, nrows " << k << " " << nRows << std::endl;
+
+    if ( simul_key == 1 && t->Id(0,1)!=3 ) {
+      input->Next();
+      continue;
     }
-    if ( k > 55 ) 
-      break;
-    if ( nRows == 0 ) {
-      if ( simul_key == 1 && t->Id(0,1)!=3 ) {
-	input->Next();
-	continue;
-      }
-      std::cout << "does this ever happen?" << std::endl;
-      for ( Int_t l = 0; l < 13; l++ ) {
-	e_vars[l] = 0;
-      }
-      e_recons->Fill(e_vars);
-      
-      Clear_variables(TargType,Q2,Nu, Xb, W,
-		      SectorEl, Zh, Pt, W2p,
-		      Xf, T, P, deltaZ,
-		      Px, Py, Pz, pid, evnt,
-		      ThetaPQ, PhiPQ, Theta, Phi);
+
+    evnt = k;
+
+    if ( nRows == 0 || nRows == 1 ) {
+      //eventsize=0;
       if ( simul_key == 1 ) {
+	if ( t->GetCategorization(0,tt) == "electron" ) {
+	  TargType = t->ElecVertTarg(1);
+	  Q2 = t->Q2(1);
+	  Nu = t->Nu(1);
+	  Xb = t->Xb(1);
+	  W  = t->W(1) ;
+	  SectorEl = t->Sector(0,1);
+	}
 	tree_accept.Fill();
       }
       if ( simul_key == 0 ) {
 	tree_data.Fill();
       }
-    }
-  
-    if ( nRows == 1 ) {
-      if ( simul_key == 1 && t->Id(0,1)!=3 ) {
-	input->Next();
-	continue;
+      SetElectronVars(e_vars, t, k, 0);
+      if ( t->GetCategorization(0,tt) != "electron" ) {
+	for ( Int_t l = 0; l < 13; l++ ) {
+	  e_vars[l] = 0;
+	}
       }
       if ( g_Debug ) {
 	std::cout << "debug: 1 row accept particles" << std::endl;
@@ -416,11 +412,6 @@ int main(int argc, char **argv)
     if( nRows > 1 && (t->GetCategorization(0,tt)) == "electron" ) {
       
       // flag -x
-      std::cout << "this is happening" << std::endl;
-      if ( simul_key == 1 && t->Id(0,1)!=3 ) {
-	input->Next();
-	continue;
-      }
       
       // ELECTRON 
       // set variables
@@ -433,6 +424,12 @@ int main(int argc, char **argv)
 	TString category = t->GetCategorization(i,tt);
 	// set variables		  
 	//SetParticleVars(particle_vars,t,k,i,0,category);
+	TargType = t->ElecVertTarg();
+	Q2 = t->Q2();
+	Nu = t->Nu();
+	Xb = t->Xb();
+	W  = t->W() ;
+	SectorEl = t->Sector(0);
 	if ( category == "pi-" ) {
 	  pid.emplace_back(-211);
 	} else if ( category == "high energy pion +" 
@@ -446,12 +443,6 @@ int main(int argc, char **argv)
 	} else {
 	  continue;
 	}
-	TargType = t->ElecVertTarg();
-	Q2 = t->Q2();
-	Nu = t->Nu();
-	Xb = t->Xb();
-	W  = t->W() ;
-	SectorEl = t->Sector(0);
 	Zh.emplace_back(t->Zh(i));
 	Pt.emplace_back(TMath::Sqrt(t->Pt2(i)));
 	W2p.emplace_back(t->Mx2(i));
@@ -469,10 +460,12 @@ int main(int argc, char **argv)
 	Phi.emplace_back(t->PhiLab(i));
       }
 	
-      if ( simul_key == 1 )
+      if ( simul_key == 1 ) {
 	tree_accept.Fill();
-      if ( simul_key == 0 )
+      }
+      if ( simul_key == 0 ) {
 	tree_data.Fill();
+      }
 
     } else if ( nRows > 1 && (t->GetCategorization(0,tt)) != "electron" ) {
       // also throwing away if first particle not electron
