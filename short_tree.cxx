@@ -346,32 +346,13 @@ int main(int argc, char **argv)
       for ( Int_t l = 0; l < 13; l++ ) {
 	e_vars[l] = 0;
       }
-
-      pid.emplace_back(0);
-      TargType = 0;
-      Q2 = 0;
-      Nu = 0;
-      Xb = 0;
-      W  = 0;
-      SectorEl = 0;
-      Zh.emplace_back(0);
-      Pt.emplace_back(0);
-      W2p.emplace_back(0);
-      Xf.emplace_back(0);
-      T.emplace_back(0);
-      P.emplace_back(0);
-      deltaZ.emplace_back(0);
-      Px.emplace_back(0);
-      Py.emplace_back(0);
-      Pz.emplace_back(0);
-      evnt = k;
-      ThetaPQ.emplace_back(0);
-      PhiPQ.emplace_back(0);
-      Theta.emplace_back(0);
-      Phi.emplace_back(0);
-      
       e_recons->Fill(e_vars);
-
+      
+      Clear_variables(TargType,Q2,Nu, Xb, W,
+		      SectorEl, Zh, Pt, W2p,
+		      Xf, T, P, deltaZ,
+		      Px, Py, Pz, pid, evnt,
+		      ThetaPQ, PhiPQ, Theta, Phi);
       if (t -> Id(0,1)==3 ) {
 	if ( simul_key == 1 )
 	  tree_accept.Fill();
