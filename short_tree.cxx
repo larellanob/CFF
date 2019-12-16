@@ -353,11 +353,19 @@ int main(int argc, char **argv)
 		      Xf, T, P, deltaZ,
 		      Px, Py, Pz, pid, evnt,
 		      ThetaPQ, PhiPQ, Theta, Phi);
-      if (t -> Id(0,1)==3 ) {
-	if ( simul_key == 1 )
-	  tree_accept.Fill();
-	if ( simul_key == 0 )
-	  tree_data.Fill();
+      if ( simul_key == 1 && t -> Id(0,1)==3 ) {
+	if ( nRows == 1 ) {
+	  TargType = t->ElecVertTarg(1);
+	  Q2 = t->Q2(1);
+	  Nu = t->Nu(1);
+	  Xb = t->Xb(1);
+	  W  = t->W(1) ;
+	  SectorEl = t->Sector(0,1);
+	}
+	tree_accept.Fill();
+      }
+      if ( simul_key == 0 ) {
+	tree_data.Fill();
       }
     }
     
@@ -465,6 +473,13 @@ int main(int argc, char **argv)
 	  tree_thrown.Fill();
 	}
 	*/
+	TargType = t->ElecVertTarg(1);
+	Q2 = t->Q2(1);
+	Nu = t->Nu(1);
+	Xb = t->Xb(1);
+	W  = t->W(1) ;
+	SectorEl = t->Sector(0,1);
+	
 	for( Int_t i=1; i < GSIMrows; i++ ) {
 	  if ( t->Id(i,1) == 8 ) {
 	    pid.emplace_back(211);
@@ -475,12 +490,6 @@ int main(int argc, char **argv)
 	  } else {
 	    continue;
 	  }
-	  TargType = t->ElecVertTarg(1);
-	  Q2 = t->Q2(1);
-	  Nu = t->Nu(1);
-	  Xb = t->Xb(1);
-	  W  = t->W(1) ;
-	  SectorEl = t->Sector(0,1);
 	  Zh.emplace_back(t->Zh(i,1));
 	  Pt.emplace_back( TMath::Sqrt(t->Pt2(i,1)) );
 	  W2p.emplace_back(t->Mx2(i,1));
