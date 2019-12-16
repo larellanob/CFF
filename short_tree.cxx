@@ -229,6 +229,7 @@ int main(int argc, char **argv)
   Int_t GSIMrows = 0;
   ProcInfo_t procinfo;
   Int_t EventCounter = 0;
+  const char * tt = target_name.c_str();
   for (Int_t k = 0; k < nEntries; k++) {
 
     gSystem->GetProcInfo(&procinfo);
@@ -236,7 +237,11 @@ int main(int argc, char **argv)
     
     Int_t nRows = input->GetNRows("EVNT");
     
-    Clear_variables(TargType,Q2,Nu, Xb, W, SectorEl, Zh, Pt, W2p, Xf, T, P, deltaZ, Px, Py, Pz, pid, evnt, ThetaPQ, PhiPQ, Theta, Phi);
+    Clear_variables(TargType,Q2,Nu, Xb, W,
+		    SectorEl, Zh, Pt, W2p,
+		    Xf, T, P, deltaZ,
+		    Px, Py, Pz, pid, evnt,
+		    ThetaPQ, PhiPQ, Theta, Phi);
       
     if ( simul_key == 1 ) {
       GSIMrows = input->GetNRows("GSIM");
@@ -245,8 +250,6 @@ int main(int argc, char **argv)
 	continue;
       }
     }
-    //const char * tt = "C";
-    const char * tt = target_name.c_str();
     
     //////////////////////////
     // FIRST PARTICLE ELECTRON
@@ -303,7 +306,7 @@ int main(int argc, char **argv)
       }
     }
     
-    if ( simul_key == 1 ) {
+    if ( simul_key == 1  && !ParticleSelection ) {
       GSIMrows = input->GetNRows("GSIM");
       for ( Int_t i = 1; i < GSIMrows; i++ ) {
 	if ( t->Id(i,1) == 8) {
@@ -341,8 +344,8 @@ int main(int argc, char **argv)
     ///////////////////////////////
     ///////////////////////////////
     
-    if ( nRows == 0 || nRows == 1 ) {
-      //eventsize=0;
+    if ( nRows == 0 ) {
+      std::cout << "does this ever happen?" << std::endl;
       for ( Int_t l = 0; l < 13; l++ ) {
 	e_vars[l] = 0;
       }
@@ -353,8 +356,25 @@ int main(int argc, char **argv)
 		      Xf, T, P, deltaZ,
 		      Px, Py, Pz, pid, evnt,
 		      ThetaPQ, PhiPQ, Theta, Phi);
-      if ( simul_key == 1 && t -> Id(0,1)==3 ) {
-	if ( nRows == 1 ) {
+      if ( simul_key == 1 ) {
+	tree_accept.Fill();
+      }
+      if ( simul_key == 0 ) {
+	tree_data.Fill();
+      }
+    }
+  
+    if ( nRows == 1 ) {
+      if ( t->Id(0,1)==3 )
+	e_recons->Fill(e_vars);
+      
+      Clear_variables(TargType,Q2,Nu, Xb, W,
+		      SectorEl, Zh, Pt, W2p,
+		      Xf, T, P, deltaZ,
+		      Px, Py, Pz, pid, evnt,
+		      ThetaPQ, PhiPQ, Theta, Phi);
+      if ( simul_key == 1 ) {
+	if ( t->Id(0,1)==3 ) {
 	  TargType = t->ElecVertTarg(1);
 	  Q2 = t->Q2(1);
 	  Nu = t->Nu(1);
@@ -364,10 +384,13 @@ int main(int argc, char **argv)
 	}
 	tree_accept.Fill();
       }
+      tree_accept.Fill();
       if ( simul_key == 0 ) {
 	tree_data.Fill();
       }
+      
     }
+    
     
     if( nRows > 1 && (t->GetCategorization(0,tt)) == "electron" ) {
       
